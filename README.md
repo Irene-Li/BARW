@@ -3,14 +3,12 @@
 
 ### Installation 
 - Clone the repository.
-- Inside the repository, type: 
-  
-  make 
+- Inside the repository, type `make`. 
   
 ### Running the code 
-To run for a specific set of parameters, type: 
+To run for a specific set of parameters, type:
 
-./bws -L 63 -N 5 -h 0.5 
+    ./bws -L 63 -N 5 -h 0.5
 
 where L is the length of the simulation box, N is the number of realisations and h is the ratio between the branching rate and diffusion. 
 
