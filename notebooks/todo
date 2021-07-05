@@ -1,0 +1,6 @@
+list of cython refs to read, want a clean impl for our lattices that is less cumbursome but very fast.
+maybe look into multi core and sparse matrices for some use cases too
+
+https://explosion.ai/blog/writing-c-in-cython
+https://gist.github.com/GaelVaroquaux/1249305
+https://github.com/explosion/cymem

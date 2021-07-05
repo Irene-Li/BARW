@@ -1,0 +1,246 @@
+\documentclass[pre,twocolumn,preprintnumbers,amsmath,amssymb,floatfix,nofootinbib]{revtex4}
+% $Header$
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{color}
+\usepackage{xspace}
+\usepackage{cases}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{afterpage}
+\usepackage{mathtools}
+\usepackage{amsmath}
+%SA
+\graphicspath{ {images/} }
+\usepackage[margin=0.5cm]{caption}
+\usepackage[hidelinks]{hyperref}
+%%%%%%%%%
+
+\bibliographystyle{apsrev}
+
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+\expandafter\ifx\csname package@font\endcsname\relax\else
+  \expandafter\expandafter
+  \expandafter\usepackage
+  \expandafter\expandafter
+  \expandafter{\csname package@font\endcsname}%
+\fi
+
+
+
+\newcommand{\gpvec}[1]{\mathbf{#1}}
+\newcommand{\zerovec}{\gpvec{0}}
+\newcommand{\nullvec}{\zerovec}
+\newcommand{\kvec}{\gpvec{k}}
+\newcommand{\mvec}{\gpvec{m}}
+\newcommand{\nvec}{\gpvec{n}}
+\newcommand{\pvec}{\gpvec{p}}
+\newcommand{\rvec}{\gpvec{r}}
+\newcommand{\vvec}{\gpvec{v}}
+\newcommand{\xvec}{\gpvec{x}}
+\newcommand{\yvec}{\gpvec{y}}
+\newcommand{\imag}{\mathring{\imath}}
+
+\usepackage{dsfont}
+\newcommand{\OLDgpset}[1]{\mathbb{#1}}
+\newcommand{\gpset}[1]{\mathds{#1}}
+
+\newcommand{\canetset}[1]{{\mathchoice {\hbox{$\sf\textstyle #1\kern-0.4em #1$}}
+{\hbox{$\sf\textstyle #1\kern-0.4em #1$}}
+{\hbox{$\sf\scriptstyle #1\kern-0.3em #1$}}
+{\hbox{$\sf\scriptscriptstyle #1\kern-0.2em #1$}}}}
+
+\newcommand{\Nset}{\gpset{N}}
+\newcommand{\Zset}{\gpset{Z}}
+\newcommand{\Qset}{\gpset{Q}}
+\newcommand{\Rset}{\gpset{R}}
+\newcommand{\Cset}{\gpset{C}}
+\newcommand{\Sset}{\gpset{S}}
+\newcommand{\Wset}{\gpset{W}}
+
+
+\newcommand{\latin}[1]{{\it #1}}
+\newcommand{\ie}{\latin{i.e.}\@\xspace}
+\newcommand{\eg}{\latin{e.g.}\@\xspace}
+\newcommand{\cf}{\latin{cf.}\@\xspace}
+\newcommand{\etc}{\latin{etc}\@\xspace}
+\newcommand{\etal}{\latin{et al}\@\xspace}
+
+\makeatletter
+\newcommand{\supmarker}[1]{{\@ifempty{#1}{}{\text{(#1)}}}}
+\makeatother
+\newcommand{\pdf}[2]{\mathcal{P}^{(#1)}\left(#2\right)}
+
+\newcommand{\slabel}[1]{\label{sec:#1}}
+\newcommand{\sref}[1]{Sec.~\ref{sec:#1}}
+\newcommand{\Sref}[1]{Sec.~\ref{sec:#1}}
+\newcommand{\aref}[1]{App.~\ref{sec:#1}}
+\newcommand{\Aref}[1]{Appendix~\ref{sec:#1}}
+
+\newcommand{\elabel}[1]{\label{eq:#1}}
+\newcommand{\eref}[1]{(\ref{eq:#1})}
+\newcommand{\ceref}[2]{(\ref{eq:#1}#2)}
+\newcommand{\Eref}[1]{Eq.~(\ref{eq:#1})}
+\newcommand{\Erefs}[1]{Eqs.~(\ref{eq:#1})}
+
+\newcommand{\flabel}[1]{\label{fig:#1}}
+\newcommand{\fref}[1]{Fig.~\ref{fig:#1}}
+\newcommand{\Fref}[1]{Fig.~\ref{fig:#1}}
+\newcommand{\Frefs}[1]{Figs.~\ref{fig:#1}}
+\newcommand{\subfref}[1]{\subref{fig:#1}}
+
+
+\newcommand{\tlabel}[1]{\label{table:#1}}
+\newcommand{\tref}[1]{Table~\ref{table:#1}}
+\newcommand{\Tref}[1]{Table~\ref{table:#1}}
+\newcommand{\Trefs}[2]{Tables~\ref{table:#1} and \ref{table:#2}}
+
+\newcommand{\CC}{\mathcal{C}}
+\newcommand{\EC}{\mathcal{E}}
+\newcommand{\FC}{\mathcal{F}}
+\newcommand{\FCdash}{\FC'}
+\newcommand{\FChat}{\hat{\FC}}
+\newcommand{\FCtilde}{\tilde{\FC}}
+\newcommand{\GC}{\mathcal{G}}
+\newcommand{\GCdash}{\GC'}
+\newcommand{\GChat}{\hat{\GC}}
+\newcommand{\GCtilde}{\tilde{\GC}}
+
+\newcommand{\plaind}{\mathrm{d}}
+\newcommand{\dint}[1]{\mathchoice{\!\plaind#1\,}{\!\plaind#1\,}{\!\plaind#1\,}{\!\plaind#1\,}}
+\newcommand{\ddint}[1]{\mathchoice{\!\plaind^d#1\,}{\!\plaind^d#1\,}{\!\plaind^d#1\,}{\!\plaind^d#1\,}}
+\newcommand{\dXint}[2]{\mathchoice{\!\plaind^{#1}#2\,}{\!\plaind^{#1}#2\,}{\!\plaind^{#1}#2\,}{\!\plaind^{#1}#2\,}}
+
+\newcommand{\ave}[1]{\left\langle #1 \right\rangle}
+
+\newcommand{\ket}[1]{\left|#1\right\rangle}
+\newcommand{\ident}{\mathbf{1}}
+
+\newcommand{\EXP}[1]{\operatorname{exp}\!\Bigg\{#1\Bigg\}}
+\newcommand{\Exp}[1]{\operatorname{exp}\left(#1\right)}
+\renewcommand{\exp}[1]{\mathchoice{\mathrm{e}^{#1}}{\operatorname{exp}\left(#1\right)}{\operatorname{exp}\left(#1\right)}{\operatorname{exp}\left(#1\right)}}
+
+
+\newcommand{\half}{\mathchoice{\frac{1}{2}}{(1/2)}{\frac{1}{2}}{(1/2)}}
+\newcommand{\threehalf}{\mathchoice{\frac{3}{2}}{(3/2)}{\frac{3}{2}}{(3/2)}}
+\newcommand{\fourth}{\mathchoice{\frac{1}{4}}{(1/4)}{\frac{1}{4}}{(1/4)}}
+\newcommand{\third}{\mathchoice{\frac{1}{3}}{(1/3)}{\frac{1}{3}}{(1/3)}}
+\newcommand{\quarter}{\fourth}
+
+
+\newcommand{\Activity}{G}
+\newcommand{\msd}{\Delta^2}
+\newcommand{\ActivityTimeAve}{\overline{\Activity}}
+\newcommand{\ActivityTimeAveSpave}{\widetilde{\Activity}}
+\newcommand{\TimeIntegratedActivity}{\widehat{\Activity}}
+\newcommand{\ActAct}{C}
+\newcommand{\ActActTimeAve}{\overline{\ActAct}}
+\newcommand{\ActActTimeAveSpave}{\widetilde{\ActAct}}
+\newcommand{\ShapeAvaAbs}{R}
+\newcommand{\ShapeAvaRel}{\widehat{\ShapeAvaAbs}}
+\newcommand{\MFT}{\text{\tiny MFT}}
+\newcommand{\AvaAvaCorr}{K}
+
+\newcommand{\nbar}{\overline{n}}
+\newcommand{\nhat}{\hat{n}}
+\newcommand{\Cbar}{\overline{C}}
+\newcommand{\Kbar}{\overline{K}}
+\newcommand{\Ds}{D_s}
+\newcommand{\Dsbar}{\overline{\Ds}}
+
+\newcommand{\roughness}{\chi}
+
+\newcommand{\phihat}{\hat{\phi}}
+
+\newcommand{\atilde}{\tilde{a}}
+\newcommand{\btilde}{\tilde{b}}
+
+\newcommand{\ActExpoSpace}{2-z}
+\newcommand{\ActExpoSpaceMFT}{2-z_{\text{\tiny MFT}}}
+
+%SA ADDS styles
+\tikzstyle{vertex}=[circle, fill=gray, draw, inner sep=0pt, minimum size=10pt]
+\tikzstyle{vertexLight}=[circle, fill=white, draw, inner sep=0pt, minimum size=10pt]
+\newcommand{\vertex}{\node[vertex]}
+\newcommand{\vertexLight}{\node[vertexLight]}
+%%%%%%%%%%%%%%%
+
+\begin{document}
+\title{BWS Numerical Implementation Notes}
+\bigskip
+\bigskip
+
+
+\begin{abstract}
+These notes describe implementation details for the implementation of the Branching Wiener Sausage simulation. Simulation code is written in C with supporting code written in Python for analysis.
+\end{abstract}
+
+
+\maketitle
+
+
+\section{Introduction}\label{introduction}
+Branching Wiener Sausage is a Reaction-Diffusion processes that consists of a branching, diffusion and extinction. A particle either diffuses with probability $h$, branches with probability $\sigma$ or becomes extinct with probability $\epsilon$. We focus only on the critical branching rate which is at $\sigma=\epsilon$. In the current implementation parameters are chosen such that $h+\sigma+\epsilon=1$ and $h$ is chosen to be high e.g. $0.95$. Each of these subprocesses is a \textit{Poisson} process. As the system evolves, an exponential waiting time for an event is simulated as $-\ln(1-U)/N$ where $U\sim U(0,1)$ and $N$ is the size of the population. Time is stored as a \verb|long double|. The process is \textit{bosonic}. When branching occurs, offspring are added \textit{locally} i.e. to the same site as the parent. We are primarily interested in the distinct sites visisted by the process.
+
+\section{Lattices}
+We consider regular lattices in $d$ dimensions in addition to a fractal (Sierpinski) lattice and small-world network. 
+\subsection{Regular Lattice}
+For regular lattices we typically choose system sizes of $2^n - 1$. We choose an upper bound that accounts for memory usage in higher dimensions. For example, two dimensions may exceed $L=2^{10}$ while three and five dimensions may struggle depending on hardware. We typically consider $L \leq 63$ for $5$D simulations.
+The $d$-dimensional lattice is mapped to a one dimensional data structure using a mapping $f: \mathcal{R}^d\to \mathcal{R}$,
+\begin{equation}
+f(x_0, x_1,..., x_d) = \sum_{d=0}^{D-1} x_d L^d
+\end{equation}
+With this mapping, a particle that hops $1$ site in any direction in $\mathcal{R}^D$ jumps $\pm L^d$ in $R^1$ for a given component axis\footnote{Conventionally we assign even numbers in $2D$ to positive(forward) moves and odd numbers to negative (back) moves}. Note also the inverse mapping $f^{-1}(i,d)$ requires iteratively extracting components by dividing $i$ by decreasing powers of $L$ to the remainder of the result on each iteration.
+
+The mapping maps each site to a \textit{partition hierarchy} of the space and plays a role in implementing boundary conditions. A bitmask is used to close boundaries on given axes. For example setting bits $0,1$ closes the first component axis at both ends to create a toroidal axis (as opposed to closed/reflecting boundaries). It is illegal for a particle to hop between partitions\footnote{TODO: Performance hint to predetermine boundary sites with lattice flags to avoid checking partitions each time. }. When a jump is computed along an axis such that $i'= i + L^d$, we can check the condition $h(i,d)\stackrel{?}{=}h(i',d)$, where $h$ gives the partitions for $i$ and $i'$. \begin{equation}
+h(i) = \Bigg\lfloor \frac{i}{L^d} \Bigg\rfloor,\ d= 1,...,D
+\end{equation}.
+Considering the mapping $\mathcal{R}^d\to \mathcal{R}$, we allow particles to move in one direction in any plane but we are careful to check when a particle moving in $\mathcal{R}$ jumps a partition illegally.
+
+
+\subsection{Sierpinski Fractal Lattice}
+
+We implement a Sierpinski fractal in d dimensions, $\mathcal{S}^{(d)}_{b,m}$. In 2 dimensions it is called a carpet. It is parametrized by $b$ and $m$ and like fractals in general, it is generated recursively. In this case the rule is to partition a lattice \textit{element} into $p^2$ partitions and erase $p^2-m$ partitions. An example of $\mathcal{S}_{3,8}$. In our simulations we will restrict $b,m$ to certain convenient values and we will choose lattices with sides that are powers of $b$ rather than considering all possible combinations of these parameters. We are consistent with choices of $b,m$ as the fractal dimension is given in terms of these parameters. Hausdorff is 
+\begin{equation}
+\mathcal{H}_d = \log m / \log b
+\end{equation}
+
+$\mathcal{S}_{3,8}$ as an fractal lattice is a convenient extension to our existing experiments on square lattices because the overall structure does not change and we simply add holes or exclusions in the lattice. As such, a walker can simply check a lattice site to see if is \textit{accessible}. We keep the existing boundary conditions for the extremities of the lattices but holes are \textit{strictly inaccessible} i.e. a walker does not fall into holes but rather is reflected from them regardless of what external boundary conditions we choose. \footnote{It is perhaps not quite accurate to say the walker is \textit{reflected} as the site in the hole is not part of the adjacency matrix at all. In the simulation, the walker attempts to walk to an inaccessible site and on failure tries again to choose a valid random location (as opposed to being reflected and missing a turn)}. For any site $i$ we require some accessibility rule
+\begin{equation}\label{mapping}
+g(i) \to [0,1]
+\end{equation}
+In an example, choosing $b=3,m=8$, we always remove the middle tile out of 9 tiles. Given the recursive nature of the fractal, we can consider partitions at various zoom levels scaling in powers of 3. A rule of the form given by (\ref{mapping}) is defined below. It determines if a particular lattice site falls in a hole of the fractal (in this example, the central tile) for \textit{any} zoom level. We take zoom levels and corresponding partitions. 
+
+Over all zoom levels, there is a $k$-hierarchy of lattices with $p=b^k$ \textit{tiles} at each level. Now let us use the notation $p=b^k$, $p'=b^{k-1}$. We can check that the following equality holds for \textit{any} $p$
+\begin{equation}
+f_p(i) := \Bigg\lfloor\frac{x_d(i)\ mod\ p}{p'}\Bigg\rfloor \overset{?}{=} \floor{b/2}, \forall d 
+\end{equation}
+This defines if a site on $\mathcal{S}_{3,8}$ is inaccessible where the boolean result is understood to map to $[0,1]$ and a site indexed $i$ is mapped onto $d$ components in $D$ dimensions via $x_d(i)$. So, for a Sierpinksi fractal on a hypercubic lattice one must check that this condition holds \textit{for all c} but \textit{for any p}.
+
+When initialising the process we start the walker a random direct offset from the boundary of the middle square e.g. from the centre we jump b to the k in a random d. Note the largest central tile in our case will cover $L$ elements, $L$ a square. So we can initialise by moving $\lceil (L/3)/2 \rceil$ in one random direction on the lattice. 
+
+\section{Waiting Times and Random Variables}
+We use the SMID-orientated Fast Mersenne Twister random number generator [ref]. We simulate Poisson waiting times but write output data deterministically according to a write time 
+\begin{equation}
+	W(i) = t_0 	\Big(\frac{t_{\infty}}{t_0}\Big)^{\tfrac{i}{n_{b}-1}}
+\end{equation}
+where $t_0,t_{\infty}$ are parameters for minimum and maximum timescales set to $10^{-1}, 10^9$. The number of bins, $n_b$ is set to $1000$.
+
+When drawing random numbers from the generator and projecting to a range $n$, we make sure not to introduce bias due to rounding via modulus errors. Given a range maximum of the generator $rng_{\infty}$, we draw again in the rare case where 
+\begin{equation}
+	x \geq rng_{\infty} - (rng_{\infty}\ mod\ n)
+\end{equation}
+\\
+
+\section{Data Output and Parameter Space}
+
+We write tab delimited data for each experiment defined by the parameter space. An experiment $E(L,B,D,h)$ is parametrised by the system size $L$, the boundary conditions $B$, the dimensionality $D$ and the hopping rate $h$. Each experiment will write metadata such as the random number generator seed. Each experiment produces $N$ samples in chunks of size $C$. Chunks are simply used to aggregate statistics and flush data at regular intervals. The tabular data consists of columns that combined parameter space and values $M0,....M8$ which correspond to the sample size in that chunk i.e. and the observables to higher orders $<s^n>$. Other data can be optionally written including the trace histogram. 
+
+
+\bibliography{supp}
+
+
+\end{document}
+\endinput

@@ -1,0 +1,25 @@
+\subsection{Fitting routine}
+In order to extract scaling exponents from numerical data, we employed a \textit{Levenberg-Marquardt}-algorithm following the implementation given by \cite{Press92}. The precise fitting routine is as follows: For the scaling in time, we determine a fitting range $[t_{\text{min}},t_{\text{max}}]$ by inspecting the lowest moment $n_c$ of visited sites that scales non-logarithmically. This order is given by the dimension of the lattice via $n_c = \max(3-d,0)$. That obtained fitting range is then also used for all higher moments. For the scaling in system size, we use the full range of available data points.
+
+Once the ranges are obtained, we first fit a pure power-law function $y_1(x) = A_1\,x^{B_1}$ against the data. Next, we use the obtained results as initial guesses to fit a corrected power-law $y_2(x) = A_2 \, x^{B_2} + C_2 \, x^{B_2 - \frac{1}{2}}$. The choice of the corrected scaling exponent is motivated by [ref?]. We then assign a quality of fit 
+\begin{align}Q = \Gamma_{\frac{N-2}{2}}\left(\frac{\chi^2}{2}\right)
+	\label{eq:goodness_of_fit}
+\end{align}
+where $\Gamma_m(x)$ is the incomplete gamma-function, $N$ the number of data-points, and $\chi^2$ the squared displacement of the data. This formula is taken from \cite{Press92}. We then refer to $B_2$ as the scaling exponent and $Q$ as its quality. A fit is rejected, if $Q\leq 0.1$. % Is that true? We always get 0.999 anyway
+
+\subsection{Discussion}
+For the goodness of fit (cf. Eq. \eqref{eq:goodness_of_fit}) to be valid, we assume that datapoints are normal-distributed around the fitting function and stochastically independent. Both assumptions, however, are incorrect; the trace-distribution is skewed (cf. [ref])
+% Here we could link to the trace-histogram
+and the trace and its moments are monotonous functions in time, hence subsequent datapoints are not independent.
+% This should really sound less negative
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% BibTex-file
+@book{Press:1992,
+	author = {Press, William H. and Teukolsky, Saul A. and Vetterling, William T. and Flannery, Brian P.},
+	title = {Numerical Recipes in C (2Nd Ed.): The Art of Scientific Computing},
+	year = {1992},
+	isbn = {0-521-43108-5},
+	publisher = {Cambridge University Press},
+	address = {New York, NY, USA},
+      } 
