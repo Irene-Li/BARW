@@ -16,4 +16,5 @@ Then you can use the python notebook `plot_data.ipynb` in the folder BARW to plo
 
 ### To reproduce the cache problem 
 
+Go into `bws.c` and delete the curly brackets around `log_trace(p)` in the definition of `add(p)`.
 Go into `lattice_core.c` and set `capacity_exceed = 0`. Then go through the process of running the code again and use `plot_data.ipynb` to plot movies of the realisations. You should be able to see that `movie_4.mp4` retains a patch from `movie_3.mp4`. 
