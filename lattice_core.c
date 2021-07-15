@@ -62,7 +62,7 @@ int inline get_site_default(int i) {
 	return 0;
 }
 
-int capacity_exceeded = 0; // to disable sttucture
+int capacity_exceeded = -1; // to disable sttucture
 int cache_size = 0;
 void log_trace(int i) {
 	//hint_stack.push(i)
@@ -131,12 +131,12 @@ void init_lattice(int boundary_conditions, int L, int D)
 			lattice[cache[i]] = 0;//get_site_default(i); <- if it was visited, it should be zero on reset
 		}
 		count_cache_resets++;
+		cache_size = capacity_exceeded = 0;
 	}
 	else {
 		for (i = 0;i < _volume;i++) { lattice[i] = get_site_default(i); }
 		count_full_resets++;
 	}
-	cache_size = capacity_exceeded = 0;
 	//mark bit for boundary - todo
 	//check BC for closed boundaries
 }
