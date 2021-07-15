@@ -58,7 +58,7 @@
 #define PARTICLE_COUNT stack.top
 //todo add a stack with a certain capacity and record trace on it unless we exceed threshold in which case?
 #define UPDATE_TRACE(p) __trace++; log_trace(p); if (__compute_rog == 1) {radius_gyr += distance_from_center(p); if (__trace > 1){radius_gyr /= (__trace-1);}}
-#define ADD(p) if(TRACE_FLAG!=(lattice[p] & TRACE_FLAG)) UPDATE_TRACE(p); lattice[p] |= ADD_FLAG; PUSH(p); //push(&stack,u);
+#define ADD(p) if(TRACE_FLAG!=(lattice[p] & TRACE_FLAG)) {UPDATE_TRACE(p)}; lattice[p] |= ADD_FLAG; PUSH(p); //push(&stack,u);
 #define REMOVE(p) lattice[p] &= ~CURRENT_FLAG
 #define MOVE(from,to) REMOVE(from); ADD(to);
 #define STAY(p) ADD(p)

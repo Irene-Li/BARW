@@ -3,7 +3,7 @@
 #include <math.h>
 
 #define HOLE (1<<6)
-#define CACHE_CAPACITY 1000000
+#define CACHE_CAPACITY 100000
 
 int inline get_site_default(int i);
 void log_trace(int i);
