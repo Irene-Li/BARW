@@ -165,8 +165,14 @@ int allocate_lattice(char **buffer, int L, int D, int type) {
  * Further, there was a bug in log_trace, that the cache would be exceeded,
  * but log_trace would carry on writing.
  *
+ * Further, when used in the mode of increasing system sizes, not
+ * run_for_realisations, then all the information for the boundary condition
+ * is not recalculated and therefore the next_pos returned by diffusion 
+ * may often be wrong. I turned this off.
+ *
  * Fixes: ADD(p) needs curly brackets, init_lattice needs fix, log_trace needs fix, 
- *   init_lattice needs either get_site_default or 0 in both cases
+ *   init_lattice needs either get_site_default or 0 in both cases, switched off
+ *   non-run_for_realisations
  */
 
 void init_lattice(int boundary_conditions, int L, int D)
