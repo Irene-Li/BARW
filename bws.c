@@ -1,5 +1,4 @@
-/* GP comment, meeting 16/03
-*Branching Wiener Sausage - see readme for details and /scripts for compilation and execution notes*/
+/*Branching Wiener Sausage - see readme for details and /scripts for compilation and execution notes*/
 
 //todo document possibly subtle things e.g. we use flags on forloops in writing to decide when to write out things like histograms, lattices, avalanches etc. see for loops
 #include <stdio.h>
@@ -11,9 +10,9 @@
 #include <getopt.h>
 #include <unistd.h>
 #endif
-#include "rng/mt19937ar_clean_bkp.c"
+#include "rng/mt19937ar_clean_bkp.h"
 #include "bws.h"
-#include "lattice_core.c"
+#include "lattice_core.h"
 
 //write the trace
 #define WRITE_TRACE_SIZE(N, L, t) if (__verbose==1 && __trace > 1){printf("#MAX_TRACE(%.3Lf,%d,%d):%d\n", t, L, N,__trace);}
@@ -50,10 +49,12 @@
 #define _RANDOM_INT(r, n) unsigned x= genrand_int32(); while (x >= RNG_MT_MAX - (RNG_MT_MAX % n)) {x = genrand_int32();} x %= n; r = (int)x;
 #define RANDOM_DOUBLE  genrand_real1()
 #define RANDOM_ORIENTATION (genrand_int32() % (2*D))
-#define POP_RANDOM_PARTICLE(p)int r,top; _RANDOM_INT(r, stack.top); p = stack.stk[r]; stack.stk[r] = POP(top); p;
+#define ORIG_POP_RANDOM_PARTICLE(p)int r,top; _RANDOM_INT(r, stack.top); p = stack.stk[r]; stack.stk[r] = POP(top); p;
+#define POP_RANDOM_PARTICLE(p) {int r,top; _RANDOM_INT(r, stack.top); p = stack.stk[r]; stack.stk[r] = POP(top);}
 #define EXP_WAIT(n) (1.0/(double)n) * (-log(1-RANDOM_DOUBLE))
 
-#define POP(p)  p=stack.stk[--stack.top]; p
+#define ORIG_POP(p)  p=stack.stk[--stack.top]; p
+#define POP(p)  p=stack.stk[--stack.top];
 #define PUSH(p) stack.stk[stack.top++] = p;
 #define PARTICLE_COUNT stack.top
 //todo add a stack with a certain capacity and record trace on it unless we exceed threshold in which case?
@@ -62,7 +63,8 @@
 #define REMOVE(p) lattice[p] &= ~CURRENT_FLAG
 #define MOVE(from,to) REMOVE(from); ADD(to);
 #define STAY(p) ADD(p)
-#define TRY_ADD_IMMOBILE(p)  if(IMMOBILE_FLAG!=(lattice[p] & IMMOBILE_FLAG))__immobileTrace++ ;lattice[p] |= IMMOBILE_FLAG
+/* pruess 18 July 2021: I think there needs to be a log_trace(p) here, too. */
+#define TRY_ADD_IMMOBILE(p)  if(IMMOBILE_FLAG!=(lattice[p] & IMMOBILE_FLAG))__immobileTrace++ ; lattice[p] |= IMMOBILE_FLAG; log_trace(p)
 
 /*Function declaration */
 void print_write_times(void);
@@ -132,6 +134,8 @@ int main(int argc, char *argv[])
 		//we either run a single L if specified, otherwise go through the motions
 		if (L > 0) { run_for_realisations(N, L, D, h, BCs, seed); }
 		else {
+		fprintf(stderr, "This part of the code needs re-writing because if we scan over different system sizes, allocate_lattice needs to run again, because it contains all the information about wrapping etc. We should free(3) the lattice and re-allocate or at least re-calculate the offsets wrap_increment_maps and lattice_actions.\n");
+		exit(EXIT_FAILURE);
 			for (l = min_l; l <= max_l; l++) {
 				L = pow(2, l) - 1;
 				run_for_realisations(N, L, D, h, BCs, seed);
@@ -147,6 +151,8 @@ inline void run_for_realisations(int N, int L, int D, double h, int bcs, int see
 
 	printf("# Running for L = %i\n", L);
 	int _n = 0, chunk = 0;
+	//#warning "Debug only."
+	//N=55;
 	for (_n = 0; _n < N; _n++) {
 		printf("# Starting the %d th realisation \n", _n); 
 		double rd = 0.0;
@@ -200,6 +206,7 @@ inline void run_for_realisations(int N, int L, int D, double h, int bcs, int see
 			last_time = time;
 		} while (PARTICLE_COUNT);
 	}
+	printf("# Info: count_full_resets=%i and count_cache_resets=%i\n", count_full_resets, count_cache_resets);
 	printf("#okely dokely!");//look for this line int stats out
 }
 

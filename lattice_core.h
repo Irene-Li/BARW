@@ -1,9 +1,13 @@
+#ifndef LATTICE_CORE_H
+#define LATTICE_CORE_H
 #pragma once
 
 #include <math.h>
 
 #define HOLE (1<<6)
 #define CACHE_CAPACITY 100000
+//#warning "Debug only"
+//#define CACHE_CAPACITY 10
 
 int inline get_site_default(int i);
 void log_trace(int i);
@@ -15,3 +19,9 @@ int get_center(int L, int D);
 int probe(int loc, int dir, int offsets[]);
 void right_turning_walk(int L, int n, long double time);
 
+#ifndef LATTICE_CORE_C
+extern int count_cache_resets;
+extern int count_full_resets;
+#endif
+
+#endif

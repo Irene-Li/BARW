@@ -1,5 +1,6 @@
 //#basic bosonic L^D lattice
 #include "lattice_core.h"
+#include "rng/mt19937ar_clean_bkp.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -23,7 +24,7 @@ int wrap_increment_maps[20];
 
 #define IS_ACCESSIBLE(p) (HOLE != (lattice[p] & HOLE))
 
-int inline Xc(int i, int d) {
+int Xc(int i, int d) {
 	int _d = 0, x = 0, fact = 0;
 	for (_d = _D - 1; _d >= 0;_d--) {
 		fact = pow(_L, _d);
@@ -31,10 +32,12 @@ int inline Xc(int i, int d) {
 		if (_d == d)return x;
 		i = i % fact;
 	}
+return(-1);
 }
 
+
 //this code is very literal and crude at the moment and should be optimized and done more elegantly
-int inline get_site_default(int i) {
+int get_site_default(int i) {
 	if (lattice_type == 0)return 0;
 	if (lattice_type == 1) {//sierpinski b=3, m=1
 		int b = 3;//move out
@@ -62,18 +65,45 @@ int inline get_site_default(int i) {
 	return 0;
 }
 
-int capacity_exceeded = -1; // to disable sttucture
+#define CACHE_EXCEEDED (1)
+#define CACHE_DISABLED (2)
+
+int cache_flags = 0; // (pruess 18 Jul 2021) CACHE_DISABLED to disable cache, otherwise set = 0 
+//int capacity_exceeded = -1; // to disable sttucture
 int cache_size = 0;
 void log_trace(int i) {
 	//hint_stack.push(i)
-	if (capacity_exceeded == -1) return;//disabled
-	if ((cache_size) == CACHE_CAPACITY) {
-		capacity_exceeded = 1;
+	if (cache_flags & ( CACHE_DISABLED | CACHE_EXCEEDED)) return;//disabled
+	if ((cache_size) >= CACHE_CAPACITY) {
+		//capacity_exceeded = 1;
+		cache_flags |= CACHE_EXCEEDED;
 		return;
 	}
 	cache[cache_size] = i;
 	cache_size += 1;
 }
+
+
+/*
+
+int capacity_exceeded = -1; // to disable sttucture
+int cache_size = 0;
+void log_trace(int i) {
+        //hint_stack.push(i)
+        if (capacity_exceeded == -1) return;//disabled
+        if ((cache_size) == CACHE_CAPACITY) {
+                capacity_exceeded = 1;
+                return;
+        }
+        cache[cache_size] = i;
+        cache_size += 1;
+}
+
+*/
+
+
+
+
 
 int count_full_resets = 0;
 int count_cache_resets = 0;
@@ -116,10 +146,63 @@ int allocate_lattice(char **buffer, int L, int D, int type) {
 	//int nacc = IS_ACCESSIBLE(30);
 	//int yacc = IS_ACCESSIBLE(29);
 
-	if (*buffer == NULL) { printf("\nERROR: Memory allocation did not complete successfully! Required size %i bytes", size); }
+	if (*buffer == NULL) { printf("\nERROR: Memory allocation did not complete successfully! Required size %i bytes", size); exit(EXIT_FAILURE); }
 	return 0;
 }
 
+/* pruess 18 July 2021
+ * I think the previous version contained the following bug.
+ * By default capacity_exceeded=0. 
+ * Bug: log_trace would be triggered irrespective of whether]
+ * or not it actually needs triggering, because of a typo in
+ * the ADD(p) macro.
+ * As a result, capacity would often be exceeded and capacity_exceeded=1
+ * would almost always be triggered. 
+ * Bug: In init_lattice the lattice would be fully flushed only when
+ * capacity_exceeded!=1, i.e. when capacity_exceeded=0 or when capacity_exceeded=-1.
+ * When capacity was exceeded, i.e. capacity_exceeded=1, then the cache would be
+ * used.
+ * Further, there was a bug in log_trace, that the cache would be exceeded,
+ * but log_trace would carry on writing.
+ *
+ * Fixes: ADD(p) needs curly brackets, init_lattice needs fix, log_trace needs fix, 
+ *   init_lattice needs either get_site_default or 0 in both cases
+ */
+
+void init_lattice(int boundary_conditions, int L, int D)
+{
+	_BCS = boundary_conditions;
+	__init(L, D);
+	int i = 0;
+	//reset logic follows
+	//
+	
+
+	if (cache_flags & (CACHE_DISABLED | CACHE_EXCEEDED) ) {//turn off this behaviour using cap_exceeded == -1
+	//printf("# Info: Init via volume %i.\n", _volume);
+		for (i = 0;i < _volume;i++) { lattice[i] = get_site_default(i); }
+		count_full_resets++;
+		cache_flags &= ~CACHE_EXCEEDED;
+		cache_size=0;
+
+	}
+	else {
+	//printf("# Info: Init via cache.\n");
+		for (i = 0;i < cache_size;i++) {
+		/* pruess 18 July 2021: get_site_default(i) is what should happen. In any case, it needs to be the same as in cache_flags & (CACHE_DISABLED | CACHE_EXCEEDED) */
+			lattice[cache[i]] = get_site_default(cache[i]); 
+			//lattice[cache[i]] = 0;//get_site_default(i); <- if it was visited, it should be zero on reset
+		}
+		//#warning "Debug only."
+		//for (i = 0;i < _volume;i++) { if (lattice[i] != get_site_default(i)) { printf("Site %i has %i should be %i\n", i, lattice[i], get_site_default(i)); exit(EXIT_FAILURE);} }
+		count_cache_resets++;
+		cache_size = 0;
+	}
+	//mark bit for boundary - todo
+	//check BC for closed boundaries
+}
+
+/*
 void init_lattice(int boundary_conditions, int L, int D)
 {
 	_BCS = boundary_conditions;
@@ -140,6 +223,7 @@ void init_lattice(int boundary_conditions, int L, int D)
 	//mark bit for boundary - todo
 	//check BC for closed boundaries
 }
+*/
 
 int diffuse(int pos, int choice) {
 	int pos_next = pos + lattice_actions[choice];
@@ -152,6 +236,8 @@ int diffuse(int pos, int choice) {
 	}
  	if (IS_ACCESSIBLE(pos_next)==0) {  return -2;  } //reflect and surface the issue, process can go again
 	//if we are wrapping?
+	#warning "Unnecessary check?"
+	if ((pos_next<0) || (pos_next>=_volume)) { fprintf(stderr, "Illegal pos_next=%i not in [0,%i-1]. Parameters were pos=%i choice=%i lattice_actions[choice]=%i wrap_increment_maps[choice]=%i\n", pos_next, _volume, pos, choice, lattice_actions[choice], wrap_increment_maps[choice]); exit(EXIT_FAILURE); }
 	return pos_next;
 }
 
@@ -159,7 +245,8 @@ int get_center(int L, int D) {
 	__init(L, D);
 
 	if (lattice_type == 1) {
-		int random_dir = abs(genrand_int32() % (2 * _D));
+		//int random_dir = abs(genrand_int32() % (2 * _D));
+		int random_dir = genrand_int32() % (2 * _D);
 		int random_dir_offset = lattice_actions[random_dir];
 		int sierpinski_tile_offset = random_dir_offset * (int)ceil(L / (double)(3 * 2));//see notes S3,8 always has central tile of side sqrt(L). So we place ourparticle beside it
 		//printf("center at %d\n", sierpinski_tile_offset);
