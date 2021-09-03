@@ -49,17 +49,14 @@
 #define _RANDOM_INT(r, n) unsigned x= genrand_int32(); while (x >= RNG_MT_MAX - (RNG_MT_MAX % n)) {x = genrand_int32();} x %= n; r = (int)x;
 #define RANDOM_DOUBLE  genrand_real1()
 #define RANDOM_ORIENTATION (genrand_int32() % (2*D))
-#define ORIG_POP_RANDOM_PARTICLE(p)int r,top; _RANDOM_INT(r, stack.top); p = stack.stk[r]; stack.stk[r] = POP(top); p;
-#define POP_RANDOM_PARTICLE(p) {int r,top; _RANDOM_INT(r, stack.top); p = stack.stk[r]; stack.stk[r] = POP(top);}
 #define EXP_WAIT(n) (1.0/(double)n) * (-log(1-RANDOM_DOUBLE))
 
-#define ORIG_POP(p)  p=stack.stk[--stack.top]; p
-#define POP(p)  p=stack.stk[--stack.top];
-#define PUSH(p) stack.stk[stack.top++] = p;
+// #define POP(p)  p=stack.stk[--stack.top];
+// #define PUSH(p) stack.stk[stack.top++] = p;
 #define PARTICLE_COUNT stack.top
 //todo add a stack with a certain capacity and record trace on it unless we exceed threshold in which case?
 #define UPDATE_TRACE(p) __trace++; log_trace(p); if (__compute_rog == 1) {radius_gyr += distance_from_center(p); if (__trace > 1){radius_gyr /= (__trace-1);}}
-#define ADD(p) if(TRACE_FLAG!=(lattice[p] & TRACE_FLAG)) {UPDATE_TRACE(p)}; lattice[p] |= ADD_FLAG; PUSH(p); //push(&stack,u);
+#define ADD(p) if(TRACE_FLAG!=(lattice[p] & TRACE_FLAG)) {UPDATE_TRACE(p)}; lattice[p] |= ADD_FLAG; PUSH(p, &stack); 
 #define REMOVE(p) lattice[p] &= ~CURRENT_FLAG
 #define MOVE(from,to) REMOVE(from); ADD(to);
 #define STAY(p) ADD(p)
@@ -74,6 +71,7 @@ int write_hist = 0, write_lattice = 0, write_image = 1, write_hull = 0, write_av
 
 char *lattice;
 SSTACK stack;
+SSTACK past_pos_stack; 
 //temp - idea here is we can configure the resolution of things like write times and historgrams but then we need to malloc
 int BIN_N = BINS;
 
@@ -106,6 +104,28 @@ void spit_out_image(int L, long double t, int n, int new_lines) {
 	}
 	printf("\n");
 }
+
+int POP(SSTACK *stack) {
+	return stack->stk[--stack->top];
+}
+
+int POP_SPECIFIED(SSTACK *stack, int r){
+	int pos; 
+	pos = stack->stk[r]; 
+	stack->stk[r] = POP(stack);
+	return pos;  
+}
+
+void PUSH(int p, SSTACK *stack) {
+	stack->stk[stack->top++] = p;
+}
+
+int CHOOSE_RANDOM_INIT(){
+	int r; 
+	_RANDOM_INT(r, stack.top); 
+	return r; 
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -157,14 +177,17 @@ inline void run_for_realisations(int N, int L, int D, double h, int bcs, int see
 		printf("# Starting the %d th realisation \n", _n); 
 		double rd = 0.0;
 		long double time = 0.0, last_time = 0.0;
-		int write_time_index = 0, pos = 0, ro = 0, next = 0;
+		int write_time_index = 0, pos = 0, ro = 0, next = 0; 
+		int r=0, past_pos=0; 
 		init_lattice(bcs, L, D);
 		// print out initialised lattice
 		spit_out_image(L, time, _n, FALSE);
-		stack.top = 0; __trace = 0; __immobileTrace = 0, __maxParticles = 0;
+		stack.top = 0; past_pos_stack.top = 0;
+		__trace = 0; __immobileTrace = 0, __maxParticles = 0;
 
 		int cen = get_center(L, D);
 		ADD(cen);
+		PUSH(cen, &past_pos_stack); // as a placeholder before the particle moves 
 		do {
 			time += (EXP_WAIT(PARTICLE_COUNT));
 
@@ -178,12 +201,17 @@ inline void run_for_realisations(int N, int L, int D, double h, int bcs, int see
 				break; 
 			}
 
-			POP_RANDOM_PARTICLE(pos);
+			r = CHOOSE_RANDOM_INIT();
+			pos = POP_SPECIFIED(&stack, r);
+			past_pos = POP_SPECIFIED(&past_pos_stack, r);
+
 			rd = RANDOM_DOUBLE;//to choose sub-process...
 
 			if (rd <= h) {//branch locally (and stay)
 				STAY(pos);
+				PUSH(past_pos, &past_pos_stack);
 				ADD(pos);
+				PUSH(past_pos, &past_pos_stack);
 			}
 
 			else { //hop
@@ -193,6 +221,10 @@ inline void run_for_realisations(int N, int L, int D, double h, int bcs, int see
 				while (next == -2) {
 					next = diffuse(pos, RANDOM_ORIENTATION); //reflected from holes
 				}
+				while (next == past_pos) {
+					next = diffuse(pos, RANDOM_ORIENTATION); // not allowed to go back 
+				}
+
 				if (next == -1) {//-1 illegal - dead for open boundary - not put back on stack, reset flag on lattice
 					REMOVE(pos);
 				}
@@ -201,6 +233,7 @@ inline void run_for_realisations(int N, int L, int D, double h, int bcs, int see
 				}
 				else {
 					MOVE(pos, next);
+					PUSH(pos, &past_pos_stack); // track the current position as past position
 				}
 			}
 			last_time = time;
