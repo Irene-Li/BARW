@@ -17,7 +17,7 @@
 //write the trace
 #define WRITE_TRACE_SIZE(N, L, t) if (__verbose==1 && __trace > 1){printf("#MAX_TRACE(%.3Lf,%d,%d):%d\n", t, L, N,__trace);}
 #define PRINT_VERSION {printf(VERSION); printf("\n");}
-#define PRINT_PARAMS printf("#Parameters={ Seed: %i, Hopping rate: %g, Realisations: %i, Chunk size: %i, Dimension: %i, (Max) Lattice size: %i, Graph Type: %d }\n", seed, h, N, CHUNK_SIZE, D, MAX_L,__graph_type__);
+#define PRINT_PARAMS printf("#Parameters={ Seed: %i, Branching rate: %g, p : %g, q : %g, Realisations: %i, Chunk size: %i, Dimension: %i, (Max) Lattice size: %i, Graph Type: %d }\n", seed, h, p, q, N, CHUNK_SIZE, D, MAX_L,__graph_type__);
 #define PRINT_OPTIONS printf("#TODO\n");
 //we have predetermined write times at 1,2,3,...9,10,20,....90,100,200,.....900,1000,2000,...
 #define WRITE_TIME_FUNCTION(i) (MIN_T * pow(MAX_T/MIN_T, (double)i/(BINS-1)))
@@ -135,10 +135,10 @@ int main(int argc, char *argv[])
 	#endif
 
 	
-	double h;
+	double h, p, q;
 
 	int BCs, D, l, Ln, L, C, N, seed, min_l, max_l;
-	if (parse_args(&BCs, &D, &L, &C, &Ln, &N, &seed, &min_l, &max_l, &h, argc, argv) == TRUE) {
+	if (parse_args(&BCs, &D, &L, &C, &Ln, &N, &seed, &min_l, &max_l, &h, &p, &q, argc, argv) == TRUE) {
 		CHUNK_SIZE = (int)(N / C);
 		// Initialise RNG, check!
 		init_genrand( seed );
@@ -152,13 +152,13 @@ int main(int argc, char *argv[])
 		allocate_lattice(&lattice, MAX_L, D, __graph_type__);
 		INIT_WRITE_TIMES 
 		//we either run a single L if specified, otherwise go through the motions
-		if (L > 0) { run_for_realisations(N, L, D, h, BCs, seed); }
+		if (L > 0) { run_for_realisations(N, L, D, h, p, q, BCs, seed); }
 		else {
 		fprintf(stderr, "This part of the code needs re-writing because if we scan over different system sizes, allocate_lattice needs to run again, because it contains all the information about wrapping etc. We should free(3) the lattice and re-allocate or at least re-calculate the offsets wrap_increment_maps and lattice_actions.\n");
 		exit(EXIT_FAILURE);
 			for (l = min_l; l <= max_l; l++) {
 				L = pow(2, l) - 1;
-				run_for_realisations(N, L, D, h, BCs, seed);
+				run_for_realisations(N, L, D, h, p, q, BCs, seed);
 			}
 		}
 	}
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 }
 
 	
-inline void run_for_realisations(int N, int L, int D, double h, int bcs, int seed) {
+inline void run_for_realisations(int N, int L, int D, double h, double p, double q, int bcs, int seed) {
 
 	printf("# Running for L = %i\n", L);
 	int _n = 0, chunk = 0;
@@ -175,10 +175,10 @@ inline void run_for_realisations(int N, int L, int D, double h, int bcs, int see
 	//N=55;
 	for (_n = 0; _n < N; _n++) {
 		printf("# Starting the %d th realisation \n", _n); 
-		double rd = 0.0;
+		double rd = 0.0, ro=0.0;
 		long double time = 0.0, last_time = 0.0;
-		int write_time_index = 0, pos = 0, ro = 0, next = 0; 
-		int r=0, past_pos=0; 
+		int write_time_index = 0, pos = 0, next = 0; 
+		int r=0, past_pos=0;  
 		init_lattice(bcs, L, D);
 		// print out initialised lattice
 		spit_out_image(L, time, _n, FALSE);
@@ -187,7 +187,7 @@ inline void run_for_realisations(int N, int L, int D, double h, int bcs, int see
 
 		int cen = get_center(L, D);
 		ADD(cen);
-		PUSH(cen, &past_pos_stack); // as a placeholder before the particle moves 
+		PUSH(cen-1, &past_pos_stack); // Starting with a right moving particle
 		do {
 			time += (EXP_WAIT(PARTICLE_COUNT));
 
@@ -215,21 +215,14 @@ inline void run_for_realisations(int N, int L, int D, double h, int bcs, int see
 			}
 
 			else { //hop
-				ro = RANDOM_ORIENTATION;
-				next = diffuse(pos, ro);
-
-				while (next == -2) {
-					next = diffuse(pos, RANDOM_ORIENTATION); //reflected from holes
-				}
-				while (next == past_pos) {
-					next = diffuse(pos, RANDOM_ORIENTATION); // not allowed to go back 
-				}
+				ro = RANDOM_DOUBLE; 
+				next = persist_diffuse2d(pos, past_pos, p, q, ro);
 
 				if (next == -1) {//-1 illegal - dead for open boundary - not put back on stack, reset flag on lattice
 					REMOVE(pos);
 				}
 				else if (TRACE_FLAG == (lattice[next] & TRACE_FLAG)) { // if the site is already occupied
-					REMOVE(pos); 
+					// do nothing because pos has already been removed from stack 
 				}
 				else {
 					MOVE(pos, next);
@@ -238,15 +231,16 @@ inline void run_for_realisations(int N, int L, int D, double h, int bcs, int see
 			}
 			last_time = time;
 		} while (PARTICLE_COUNT);
+		spit_out_image(L, time, _n, FALSE); // print out the final state 
 	}
 	printf("# Info: count_full_resets=%i and count_cache_resets=%i\n", count_full_resets, count_cache_resets);
 	printf("#okely dokely!");//look for this line int stats out
 }
 
 
-int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int *min_l, int *max_l, double *h, int argc, char *argv[]) {
+int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int *min_l, int *max_l, double *h, double *p, double *q, int argc, char *argv[]) {
 	// Define default parameters
-	*seed = 5; *N = 5000000; *D = 2; *Ln = -1; *bcs = 0; *L = -1; *C = 1; *h = 0.1;
+	*seed = 5; *N = 5000000; *D = 2; *Ln = -1; *bcs = 0; *L = -1; *C = 1; *h = 0.1; *p = 0.5, *q = 0.25; 
 	*min_l = 2; *max_l = 7;
 
 	//test///////////////
@@ -299,7 +293,7 @@ int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int
 
 	int             c;
 	int option_index = 0;
-	const char    * short_opt = "C:N:L:D:h:";
+	const char    * short_opt = "C:N:L:D:h:p:q:";
 	struct option   long_opt[] =
 	{
 	   {"help",          no_argument,       NULL, 0},
@@ -366,7 +360,7 @@ int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int
 
 				printf("Simulation of a Branching Wiener Sausage at Critical Point \n");
 				printf("Usage: %s [OPTIONS]\n", argv[0]);
-				printf("  -h                    set hopping rate\n");
+				printf("  -h                    set branchig rate\n");
 				printf("  -C                    choose the numer of chunks to used. Chunksize will be N/C\n");
 				printf("  -N                    choose the numer of realisations to do\n");
 				printf("  -L                    choose a specific system size. This takes precedence over other system size parameters\n");
@@ -401,6 +395,14 @@ int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int
 
 		case 'h':
 			*h = atof(optarg);
+			break;
+
+		case 'p':
+			*p = atof(optarg);
+			break;
+
+		case 'q':
+			*q = atof(optarg);
 			break;
 
 		case 'L':

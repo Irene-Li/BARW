@@ -128,7 +128,8 @@ int allocate_lattice(char **buffer, int L, int D, int type) {
 	int choice;
 	for (choice = 0; choice < 2 * D; choice++) {
 		int dim = (int)floor(choice / 2);
-		int sign = 1; if (choice % 2 == 0)sign = -1;
+		int sign = 1; 
+		if (choice % 2 == 0) sign = -1;
 		//these could be computed once and added to a list
 		int j = (int)pow(L, dim); //the jump for moving around the lattice structure e.g. 1, L, L^2 etc. see hier. pend.
 		dimension_increment_maps[choice] = j;
@@ -245,6 +246,51 @@ int diffuse(int pos, int choice) {
 	#warning "Unnecessary check?"
 	if ((pos_next<0) || (pos_next>=_volume)) { fprintf(stderr, "Illegal pos_next=%i not in [0,%i-1]. Parameters were pos=%i choice=%i lattice_actions[choice]=%i wrap_increment_maps[choice]=%i\n", pos_next, _volume, pos, choice, lattice_actions[choice], wrap_increment_maps[choice]); exit(EXIT_FAILURE); }
 	return pos_next;
+}
+
+int persist_diffuse2d(int pos, int past_pos, double p, double q, double r) {
+	// p1: probabiltiy of going forward 
+	// p2: probability of going either of the sideway direction 
+	// r: random number between 0 and 1 
+	int next_pos; 
+	int past_step = pos - past_pos; 
+	int step_size; 
+	if (r <= p) {
+		// Go forward；
+		next_pos = pos + past_step;
+		step_size = (int) abs(past_step); 
+
+	}
+	else if (r > (q*2+p)) {
+		// Go backward;
+		next_pos = past_pos; 
+		step_size = (int) abs(past_step); 
+	}
+	else {
+		if (abs(past_step) == 1) {
+			step_size = _L; // set it equal to the new step size 
+		}
+		else {
+			step_size = 1; 
+		}
+		if (r <= p+q) { //  p < r < p+q 
+			// Go one of the side direction 
+			next_pos = pos + step_size; 
+		}
+		else { // p+q < r < p+2*q 
+			next_pos = pos - step_size; 
+		}
+	}
+	// Check if pos_next is accessible 
+	if (IS_ALLOWED_TRANSITION(pos,next_pos,step_size)==0){
+		return -1;
+	}
+	else {
+		return next_pos; 
+	}
+
+
+
 }
 
 int get_center(int L, int D) {

@@ -40,7 +40,7 @@ struct simple_stack
 typedef struct simple_stack SSTACK;
 
 extern char* lattice;
-void run_for_realisations(int N, int L, int D, double h, int bcs, int seed);
+void run_for_realisations(int N, int L, int D, double h, double p, double q, int bcs, int seed);
 
 //Required for RNG correctness
 /*void init_genrand(RNG_TYPE);
@@ -52,4 +52,4 @@ void printhelp(void);
 
 void spit_out_image(int L, long double t, int n, int new_lines);
 
-int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int *min_l, int *max_l, double *h, int argc, char *argv[]);
+int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int *min_l, int *max_l, double *h, double *p, double *q, int argc, char *argv[]);
