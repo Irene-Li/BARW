@@ -9,6 +9,14 @@
 //#warning "Debug only"
 //#define CACHE_CAPACITY 10
 
+
+struct simple_tuple {
+	int a; 
+	int b; 
+};
+
+typedef struct simple_tuple tuple;
+
 int inline get_site_default(int i);
 void log_trace(int i);
 double distance_from_center(int i);
@@ -19,6 +27,8 @@ int allocate_lattice(char** buffer, int L, int D, int type);
 int get_center(int L, int D);
 int probe(int loc, int dir, int offsets[]);
 void right_turning_walk(int L, int n, long double time);
+tuple branch_2d(int pos, int past_pos, double p, double q, double r); 
+int get_sideway_step(int pos, int past_pos); 
 
 #ifndef LATTICE_CORE_C
 extern int count_cache_resets;

@@ -39,6 +39,9 @@ struct simple_stack
 };
 typedef struct simple_stack SSTACK;
 
+
+
+
 extern char* lattice;
 void run_for_realisations(int N, int L, int D, double h, double p, double q, int bcs, int seed);
 

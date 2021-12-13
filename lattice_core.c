@@ -21,8 +21,8 @@ int wrap_increment_maps[20];
 #define IS_BOUNDARY_CLOSED(d,flag) (BOUNDARY_FLAG(d) == (flag & BOUNDARY_FLAG(d)))
 #define IS_ALLOWED_TRANSITION(i,inext,dim_scale) (PARTITION_OF(i, dim_scale*_L) == PARTITION_OF(inext, dim_scale*_L))
 #define PARTITION_OF(i,j) (int)( floor(i/((double)j)))
-
 #define IS_ACCESSIBLE(p) (HOLE != (lattice[p] & HOLE))
+
 
 int Xc(int i, int d) {
 	int _d = 0, x = 0, fact = 0;
@@ -267,12 +267,7 @@ int persist_diffuse2d(int pos, int past_pos, double p, double q, double r) {
 		step_size = (int) abs(past_step); 
 	}
 	else {
-		if (abs(past_step) == 1) {
-			step_size = _L; // set it equal to the new step size 
-		}
-		else {
-			step_size = 1; 
-		}
+		step_size = get_sideway_step(pos, past_pos);
 		if (r <= p+q) { //  p < r < p+q 
 			// Go one of the side direction 
 			next_pos = pos + step_size; 
@@ -289,8 +284,60 @@ int persist_diffuse2d(int pos, int past_pos, double p, double q, double r) {
 		return next_pos; 
 	}
 
+}
 
+tuple branch_2d(int pos, int past_pos, double p, double q, double r) {
+	// branch according to a random number
+	// p: probabiltiy of going forward 
+	// q: probability of going either of the sideway direction 
+	tuple return_vals; 
+	tuple step_sizes; 
+	int past_step = pos - past_pos; 
+	int past_step_size = (int) abs(past_step); 
+	int sideway_step = get_sideway_step(pos, past_pos);
+	if (r < p/(2*p+q)) {
+		// branch forward and one side direction 
+		return_vals.a = pos + past_step;  
+		return_vals.b = pos + sideway_step;
+		step_sizes.a = past_step_size; 
+		step_sizes.b = sideway_step; 
+	}
+	else if (r < 2*p/(2*p+q)) {
+		// branch forward and the other side direction 
+		return_vals.a = pos + past_step; 
+		return_vals.b = pos - sideway_step;
+		step_sizes.a = past_step_size;
+		step_sizes.b = sideway_step; 
+	}
+	else { 
+		// branch sideways 
+		return_vals.a = pos + sideway_step; 
+		return_vals.b = pos - sideway_step;
+		step_sizes.a = sideway_step; 
+		step_sizes.b = sideway_step;  
+	}
 
+	if (IS_ALLOWED_TRANSITION(pos,return_vals.a,step_sizes.a)==0){ // if not allowed transition
+		return_vals.a = -1; 
+	}
+	if (IS_ALLOWED_TRANSITION(pos,return_vals.b,step_sizes.b)==0){ // if not allowed transition
+		return_vals.b = -1; 
+	}
+
+	return return_vals;
+}
+
+int get_sideway_step(int pos, int past_pos) {
+	int past_step = pos - past_pos;
+	int step_size; 
+
+	if (abs(past_step) == 1) {
+		step_size = _L; // set it equal to the new step size 
+	}
+	else {
+		step_size = 1; 
+	} 
+	return step_size; 
 }
 
 int get_center(int L, int D) {

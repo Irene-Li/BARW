@@ -90,16 +90,22 @@ int MAX_L = 0;
 
 void spit_out_image(int L, long double t, int n, int new_lines) {
 	int a = 0;
-	printf("%.3Lf,", t);
+	printf("%.3Lf \n", t);
+	printf("passive:");
 	for (a = 0; a < L*L; a++) {
 		if (a % L == 0 && new_lines == TRUE)
 			printf("\n");
 		if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {
 			printf("%03d,", a);
 		}
-		else {
-			//this is for testing and viz
-			//printf("    ");
+	}
+	printf("\n");
+	printf("active:");
+	for (a = 0; a < L*L; a++) {
+		if (a % L == 0 && new_lines == TRUE)
+			printf("\n");
+		if (CURRENT_FLAG == (lattice[a] & CURRENT_FLAG)) {
+			printf("%03d,", a);
 		}
 	}
 	printf("\n");
@@ -175,13 +181,12 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 	//N=55;
 	for (_n = 0; _n < N; _n++) {
 		printf("# Starting the %d th realisation \n", _n); 
-		double rd = 0.0, ro=0.0;
+		double rd = 0.0, ro=0.0, rb=0.0; 
 		long double time = 0.0, last_time = 0.0;
 		int write_time_index = 0, pos = 0, next = 0; 
+		tuple branched_pos; 
 		int r=0, past_pos=0;  
 		init_lattice(bcs, L, D);
-		// print out initialised lattice
-		spit_out_image(L, time, _n, FALSE);
 		stack.top = 0; past_pos_stack.top = 0;
 		__trace = 0; __immobileTrace = 0, __maxParticles = 0;
 
@@ -208,10 +213,22 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 			rd = RANDOM_DOUBLE;//to choose sub-process...
 
 			if (rd <= h) {//branch locally (and stay)
-				STAY(pos);
-				PUSH(past_pos, &past_pos_stack);
-				ADD(pos);
-				PUSH(past_pos, &past_pos_stack);
+				rb = RANDOM_DOUBLE; 
+				branched_pos = branch_2d(pos, past_pos, p, q, rb);
+				REMOVE(pos); 
+
+				if ((branched_pos.a != -1) && (TRACE_FLAG != (lattice[branched_pos.a] & TRACE_FLAG))) {
+					ADD(branched_pos.a);
+					PUSH(pos, &past_pos_stack);	
+					printf("edge:%03d,%03d\n", pos, branched_pos.a);
+				}
+
+				if ((branched_pos.b != -1) && (TRACE_FLAG != (lattice[branched_pos.b] & TRACE_FLAG))) {
+					ADD(branched_pos.b);
+					PUSH(pos, &past_pos_stack);
+					printf("edge:%03d,%03d\n", pos, branched_pos.b);
+
+				}
 			}
 
 			else { //hop
@@ -222,11 +239,12 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 					REMOVE(pos);
 				}
 				else if (TRACE_FLAG == (lattice[next] & TRACE_FLAG)) { // if the site is already occupied
-					// do nothing because pos has already been removed from stack 
+					REMOVE(pos); 
 				}
 				else {
 					MOVE(pos, next);
 					PUSH(pos, &past_pos_stack); // track the current position as past position
+					printf("edge:%03d,%03d\n", pos, next);
 				}
 			}
 			last_time = time;
