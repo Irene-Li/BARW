@@ -23,3 +23,5 @@ bin
 *.mp4
 bws
 *.o
+*.mp4
+.DS_Store
