@@ -67,7 +67,8 @@
 void print_write_times(void);
 /*globals*/
 int __sample_n__ = -1;//541; //-1;
-int write_hist = 0, write_lattice = 0, write_image = 1, write_hull = 0, write_avalanches = 0;
+int write_hist = 0, write_lattice = 0, write_image = 1, write_msd = 1, write_hull = 0, write_avalanches = 0; 
+int branch_method = 0; 
 
 char *lattice;
 SSTACK stack;
@@ -88,27 +89,29 @@ int __graph_type__ = 0;
 int sizeCount = 0;
 int MAX_L = 0;
 
-void spit_out_image(int L, long double t, int n, int new_lines) {
+void spit_out_image(int L, SSTACK *stack) {
 	int a = 0;
-	printf("%.3Lf \n", t);
 	printf("passive:");
 	for (a = 0; a < L*L; a++) {
-		if (a % L == 0 && new_lines == TRUE)
-			printf("\n");
 		if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {
 			printf("%03d,", a);
 		}
 	}
 	printf("\n");
 	printf("active:");
-	for (a = 0; a < L*L; a++) {
-		if (a % L == 0 && new_lines == TRUE)
-			printf("\n");
-		if (CURRENT_FLAG == (lattice[a] & CURRENT_FLAG)) {
-			printf("%03d,", a);
-		}
+	for (a = 0; a < stack->top; a++) {
+		printf("%03d,", stack->stk[a]);
 	}
 	printf("\n");
+}
+
+void active_tip_msd(SSTACK *stack) {
+	int a; 
+	double sd = 0.0; 
+	for (a = 0; a < stack->top; a++) {
+		sd += distance_from_center(stack->stk[a]); 
+	}
+	printf("msd: %.3f \n", sd/stack->top); 
 }
 
 int POP(SSTACK *stack) {
@@ -141,10 +144,10 @@ int main(int argc, char *argv[])
 	#endif
 
 	
-	double h, p, q;
+	double h, p, q, a; 
 
 	int BCs, D, l, Ln, L, C, N, seed, min_l, max_l;
-	if (parse_args(&BCs, &D, &L, &C, &Ln, &N, &seed, &min_l, &max_l, &h, &p, &q, argc, argv) == TRUE) {
+	if (parse_args(&BCs, &D, &L, &C, &Ln, &N, &seed, &min_l, &max_l, &h, &p, &q, &a, argc, argv) == TRUE) {
 		CHUNK_SIZE = (int)(N / C);
 		// Initialise RNG, check!
 		init_genrand( seed );
@@ -158,13 +161,13 @@ int main(int argc, char *argv[])
 		allocate_lattice(&lattice, MAX_L, D, __graph_type__);
 		INIT_WRITE_TIMES 
 		//we either run a single L if specified, otherwise go through the motions
-		if (L > 0) { run_for_realisations(N, L, D, h, p, q, BCs, seed); }
+		if (L > 0) { run_for_realisations(N, L, D, h, p, q, a, BCs, seed); }
 		else {
 		fprintf(stderr, "This part of the code needs re-writing because if we scan over different system sizes, allocate_lattice needs to run again, because it contains all the information about wrapping etc. We should free(3) the lattice and re-allocate or at least re-calculate the offsets wrap_increment_maps and lattice_actions.\n");
 		exit(EXIT_FAILURE);
 			for (l = min_l; l <= max_l; l++) {
 				L = pow(2, l) - 1;
-				run_for_realisations(N, L, D, h, p, q, BCs, seed);
+				run_for_realisations(N, L, D, h, p, q, a, BCs, seed);
 			}
 		}
 	}
@@ -173,7 +176,7 @@ int main(int argc, char *argv[])
 }
 
 	
-inline void run_for_realisations(int N, int L, int D, double h, double p, double q, int bcs, int seed) {
+inline void run_for_realisations(int N, int L, int D, double h, double p, double q, double a, int bcs, int seed) {
 
 	printf("# Running for L = %i\n", L);
 	int _n = 0, chunk = 0;
@@ -181,7 +184,7 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 	//N=55;
 	for (_n = 0; _n < N; _n++) {
 		printf("# Starting the %d th realisation \n", _n); 
-		double rd = 0.0, ro=0.0, rb=0.0; 
+		double rd = 0.0, ro=0.0, rb=0.0, ra=0.0; 
 		long double time = 0.0, last_time = 0.0;
 		int write_time_index = 0, pos = 0, next = 0; 
 		tuple branched_pos; 
@@ -197,7 +200,15 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 			time += (EXP_WAIT(PARTICLE_COUNT));
 
 			while ((write_times[write_time_index] < time) && (write_time_index <= BINS - 1)) {
-				spit_out_image(L, time, _n, FALSE); 
+				if (PARTICLE_COUNT > 1) {
+					printf("%.3Lf \n", time);
+					if (write_image == 1) { 
+						spit_out_image(L, &stack); // Only print when there are more than one particles (to save half of the printing)
+					}
+					if (write_msd == 1) {
+						active_tip_msd(&stack); 
+					}
+				}
 				write_time_index++; 
 			}
 
@@ -213,32 +224,42 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 			rd = RANDOM_DOUBLE;//to choose sub-process...
 
 			if (rd <= h) {//branch locally (and stay)
-				rb = RANDOM_DOUBLE; 
-				branched_pos = branch_2d(pos, past_pos, p, q, rb);
-				REMOVE(pos); 
 
-				if ((branched_pos.a != -1) && (TRACE_FLAG != (lattice[branched_pos.a] & TRACE_FLAG))) {
-					ADD(branched_pos.a);
-					PUSH(pos, &past_pos_stack);	
-					printf("edge:%03d,%03d\n", pos, branched_pos.a);
+				if (branch_method == 0) { // local branch 
+					ADD(pos);
+					ADD(pos);
+					PUSH(past_pos, &past_pos_stack);
+					PUSH(past_pos, &past_pos_stack);
 				}
+				else { 
+					rb = RANDOM_DOUBLE; 
+					branched_pos = branch_2d(pos, past_pos, p, q, rb);
+					REMOVE(pos); 
 
-				if ((branched_pos.b != -1) && (TRACE_FLAG != (lattice[branched_pos.b] & TRACE_FLAG))) {
-					ADD(branched_pos.b);
-					PUSH(pos, &past_pos_stack);
-					printf("edge:%03d,%03d\n", pos, branched_pos.b);
+					if ((branched_pos.a != -1) && (TRACE_FLAG != (lattice[branched_pos.a] & TRACE_FLAG))) {
+						ADD(branched_pos.a);
+						PUSH(pos, &past_pos_stack);	
+						printf("edge:%03d,%03d\n", pos, branched_pos.a);
+					}
 
+					if ((branched_pos.b != -1) && (TRACE_FLAG != (lattice[branched_pos.b] & TRACE_FLAG))) {
+						ADD(branched_pos.b);
+						PUSH(pos, &past_pos_stack);
+						printf("edge:%03d,%03d\n", pos, branched_pos.b);
+
+					}
 				}
 			}
 
 			else { //hop
 				ro = RANDOM_DOUBLE; 
+				ra = RANDOM_DOUBLE; 
 				next = persist_diffuse2d(pos, past_pos, p, q, ro);
 
 				if (next == -1) {//-1 illegal - dead for open boundary - not put back on stack, reset flag on lattice
 					REMOVE(pos);
 				}
-				else if (TRACE_FLAG == (lattice[next] & TRACE_FLAG)) { // if the site is already occupied
+				else if ((TRACE_FLAG == (lattice[next] & TRACE_FLAG)) && (ra <= a) ) { // if the site is already occupied there is a chance of annihilation
 					REMOVE(pos); 
 				}
 				else {
@@ -249,16 +270,17 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 			}
 			last_time = time;
 		} while (PARTICLE_COUNT);
-		spit_out_image(L, time, _n, FALSE); // print out the final state 
+		printf("%.3Lf \n", time);
+		spit_out_image(L, &stack); // print out the final state 
 	}
 	printf("# Info: count_full_resets=%i and count_cache_resets=%i\n", count_full_resets, count_cache_resets);
 	printf("#okely dokely!");//look for this line int stats out
 }
 
 
-int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int *min_l, int *max_l, double *h, double *p, double *q, int argc, char *argv[]) {
+int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int *min_l, int *max_l, double *h, double *p, double *q, double *a, int argc, char *argv[]) {
 	// Define default parameters
-	*seed = 5; *N = 5000000; *D = 2; *Ln = -1; *bcs = 0; *L = -1; *C = 1; *h = 0.1; *p = 0.5, *q = 0.25; 
+	*seed = 5; *N = 5000000; *D = 2; *Ln = -1; *bcs = 0; *L = -1; *C = 1; *h = 0.1; *p = 0.5, *q = 0.25, *a=1; 
 	*min_l = 2; *max_l = 7;
 
 	//test///////////////
@@ -311,7 +333,7 @@ int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int
 
 	int             c;
 	int option_index = 0;
-	const char    * short_opt = "C:N:L:D:h:p:q:";
+	const char    * short_opt = "C:N:L:D:h:p:q:a:";
 	struct option   long_opt[] =
 	{
 	   {"help",          no_argument,       NULL, 0},
@@ -422,6 +444,10 @@ int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int
 		case 'q':
 			*q = atof(optarg);
 			break;
+
+		case 'a': 
+			*a = atof(optarg); 
+			break; 
 
 		case 'L':
 			*L = atoi(optarg);

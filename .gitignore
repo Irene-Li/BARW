@@ -25,3 +25,5 @@ bws
 *.o
 *.mp4
 .DS_Store
+*.mp4
+bws
