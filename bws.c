@@ -202,6 +202,7 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 			while ((write_times[write_time_index] < time) && (write_time_index <= BINS - 1)) {
 				if (PARTICLE_COUNT > 1) {
 					printf("%.3Lf \n", time);
+					printf("count: %.3Lf \n", stack.top);
 					if (write_image == 1) { 
 						spit_out_image(L, &stack); // Only print when there are more than one particles (to save half of the printing)
 					}
@@ -230,6 +231,8 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 					ADD(pos);
 					PUSH(past_pos, &past_pos_stack);
 					PUSH(past_pos, &past_pos_stack);
+					printf("edge: %03d,%03d\n", pos, pos);
+					printf("edge: %03d,%03d\n", pos, pos);
 				}
 				else { 
 					rb = RANDOM_DOUBLE; 
