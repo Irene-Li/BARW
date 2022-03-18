@@ -67,7 +67,7 @@
 void print_write_times(void);
 /*globals*/
 int __sample_n__ = -1;//541; //-1;
-int write_hist = 0, write_lattice = 0, write_image = 1, write_msd = 1, write_hull = 0, write_avalanches = 0; 
+int write_hist = 0, write_lattice = 0, write_image = 1, write_msd = 1, write_edge = 0, write_hull = 0, write_avalanches = 0; 
 int branch_method = 0; 
 
 char *lattice;
@@ -231,8 +231,10 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 					ADD(pos);
 					PUSH(past_pos, &past_pos_stack);
 					PUSH(past_pos, &past_pos_stack);
-					printf("edge: %03d,%03d\n", pos, pos);
-					printf("edge: %03d,%03d\n", pos, pos);
+					if (write_edge == 1) {
+						printf("edge: %03d,%03d\n", pos, pos);
+						printf("edge: %03d,%03d\n", pos, pos);
+					}
 				}
 				else { 
 					rb = RANDOM_DOUBLE; 
@@ -242,14 +244,17 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 					if ((branched_pos.a != -1) && (TRACE_FLAG != (lattice[branched_pos.a] & TRACE_FLAG))) {
 						ADD(branched_pos.a);
 						PUSH(pos, &past_pos_stack);	
-						printf("edge:%03d,%03d\n", pos, branched_pos.a);
+						if (write_edge == 1) { 
+							printf("edge:%03d,%03d\n", pos, branched_pos.a);
+						}
 					}
 
 					if ((branched_pos.b != -1) && (TRACE_FLAG != (lattice[branched_pos.b] & TRACE_FLAG))) {
 						ADD(branched_pos.b);
 						PUSH(pos, &past_pos_stack);
-						printf("edge:%03d,%03d\n", pos, branched_pos.b);
-
+						if (write_edge == 1) {
+							printf("edge:%03d,%03d\n", pos, branched_pos.b);
+						}
 					}
 				}
 			}
@@ -268,7 +273,9 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 				else {
 					MOVE(pos, next);
 					PUSH(pos, &past_pos_stack); // track the current position as past position
-					printf("edge:%03d,%03d\n", pos, next);
+					if (write_edge == 1) {
+						printf("edge:%03d,%03d\n", pos, next);
+					}
 				}
 			}
 			last_time = time;
