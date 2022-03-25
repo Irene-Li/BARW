@@ -67,7 +67,8 @@
 void print_write_times(void);
 /*globals*/
 int __sample_n__ = -1;//541; //-1;
-int write_hist = 0, write_lattice = 0, write_image = 1, write_msd = 1, write_edge = 0, write_hull = 0, write_avalanches = 0; 
+int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 0, write_edge = 0, write_hull = 0, write_total = 1, write_final = 1; 
+int write_avalanches = 0; 
 int branch_method = 0; 
 
 char *lattice;
@@ -103,6 +104,17 @@ void spit_out_image(int L, SSTACK *stack) {
 		printf("%03d,", stack->stk[a]);
 	}
 	printf("\n");
+}
+
+int count_tracers(int L) {
+	int count = 0; 
+	int a = 0; 
+	for (a = 0; a < L*L; a++) {
+		if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {
+			count += 1;
+		}
+	}
+	return count; 
 }
 
 void active_tip_msd(SSTACK *stack) {
@@ -200,14 +212,17 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 			time += (EXP_WAIT(PARTICLE_COUNT));
 
 			while ((write_times[write_time_index] < time) && (write_time_index <= BINS - 1)) {
-				if (PARTICLE_COUNT > 1) {
-					printf("%.3Lf \n", time);
-					printf("count: %.03d \n", stack.top);
+				if (PARTICLE_COUNT >= 1) {
+					printf("time: %.3Lf \n", write_times[write_time_index]); // record binned times instead
 					if (write_image == 1) { 
 						spit_out_image(L, &stack); // Only print when there are more than one particles (to save half of the printing)
 					}
 					if (write_msd == 1) {
 						active_tip_msd(&stack); 
+					}
+					if (write_total == 1) {
+						printf("total active: %.03d \n", stack.top);
+						printf("total tracer: %.03d \n", count_tracers(L)); 
 					}
 				}
 				write_time_index++; 
@@ -281,7 +296,9 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 			last_time = time;
 		} while (PARTICLE_COUNT);
 		printf("%.3Lf \n", time);
-		spit_out_image(L, &stack); // print out the final state 
+		if (write_final == 1 ) {
+			spit_out_image(L, &stack); // print out the final state 
+		}
 	}
 	printf("# Info: count_full_resets=%i and count_cache_resets=%i\n", count_full_resets, count_cache_resets);
 	printf("#okely dokely!");//look for this line int stats out
