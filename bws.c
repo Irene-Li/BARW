@@ -295,7 +295,11 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 			}
 			last_time = time;
 		} while (PARTICLE_COUNT);
-		printf("%.3Lf \n", time);
+		printf("time: %.3Lf \n", time);
+		if (write_total == 1) {
+			printf("total active: %.03d \n", stack.top);
+			printf("total tracer: %.03d \n", count_tracers(L)); 
+		}
 		if (write_final == 1 ) {
 			spit_out_image(L, &stack); // print out the final state 
 		}
