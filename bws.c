@@ -22,18 +22,13 @@
 //we have predetermined write times at 1,2,3,...9,10,20,....90,100,200,.....900,1000,2000,...
 #define WRITE_TIME_FUNCTION(i) (MIN_T * pow(MAX_T/MIN_T, (double)i/(BINS-1)))
 #define INIT_WRITE_TIMES {int i=0; for(i =0;i < BINS; i++){write_times[i] = WRITE_TIME_FUNCTION(i);}}
-//moments for just the trace (todo add others) we note that MAX_MOMENTS does not incude the zero'th moment so we add MAX_MOMENTS+1 - this is just a convention
-#define INIT_MOMENTS_TRACE {int t; int m; for(m = 0; m <= MAX_MOMENTS; m++){for(t = 0; t < BINS; t++){trace_moments[t][m]=0;}}; INIT_WRITE_TIMES; }
 //prepare an array to store a histogram of for trace counts i each sample path - it is assumed to be between 1 and L^2 for practicality - check?
 #define INIT_TRACE_HISTOGRAM(L) {int l;  for (l=0;l< BINS*write_hist; l++ ){__trace_histogram[l]=0;}}
 //prepare and set to 0 the avalanche matrix
 #define INIT_AVALACNHES {int l, m; 	for (m = 0; m <= MAX_MOMENTS; m++) {for (l = 0; l < 10; l++) {avalanche_moments[m] = 0;}}}
-//write each recorded obs(t) - in this case just one - extend with an offset for other moments e.g. 1-8 for trace, 1-8 for population count
-#define WRITE_MOMENTS_TRACE(x,t) {int i; for(i = 0; i <= MAX_MOMENTS; i++){trace_moments[t][i] += (long double)pow(x,i);}}
+
 //write the header for the tabular data - make sure it matches what is in COMMIT_MOMENTS_TRACE
 #define WRITE_HEADER {int i;for(i = 0; i <= MAX_MOMENTS; i++){printf("\tM%d",i);} printf("\n");}
-//flush out moments to standard out - add some header info that will be used in tabular data handling
-#define COMMIT_MOMENTS_TRACE(c,L,D,BCs){ int t; int m; for(t = 0; t < BINS; t++){printf("%d\t%d\t%d\t%d\t%.3Lf",c,L,D,BCs,write_times[t]); for(m = 0; m <= MAX_MOMENTS; m++){printf("\t%.1Lf", trace_moments[t][m]);} printf("\n");}; } INIT_MOMENTS_TRACE
 //SA:The "Ben Index" is used to map a trace value to a bin - MAXSIZE is currently set to a large number which is something like the expected max value (should maybe change)
 //#define BIN_TRACE(t) {__trace_histogram[(int)floor(BINS*log(t)/log(MAXSIZE))]++;}
 //SA temp checking if this happens an we need to do something about it
@@ -68,7 +63,7 @@ void print_write_times(void);
 /*globals*/
 int __sample_n__ = -1;//541; //-1;
 int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 0, write_edge = 0, write_hull = 0, write_total = 1, write_final = 1; 
-int write_avalanches = 0; 
+int write_avalanches = 0, write_moments = 1; 
 int branch_method = 1; 
 
 char *lattice;
@@ -80,8 +75,9 @@ int BIN_N = BINS;
 long double radius_gyr = 0;
 // Avalanche (Avalanche statistics is highly not optimised, don't take it serious yet)
 long double avalanche_moments[MAX_MOMENTS + 1]; // Here, I'm assuming that there will be 10 different system sizes to be checked!
-long double trace_moments[BINS][MAX_MOMENTS + 1];//NB: adding 1 to number of moments to capture 0th moment!! ALL FOREACH shoud terminate at <=MAX_MOMENTS
+long double tracer_moments[BINS][MAX_MOMENTS + 1];//NB: adding 1 to number of moments to capture 0th moment!! ALL FOREACH shoud terminate at <=MAX_MOMENTS
 long double write_times[BINS]; // bw: changed to double
+long double active_moments[BINS][MAX_MOMENTS + 1];
 int __trace = 0, __immobileTrace = 0, __maxParticles = 0, __verbose = 0, __compute_rog = 0;
 int __trace_histogram[BINS];
 int CHUNK_SIZE = 0;
@@ -104,6 +100,17 @@ void spit_out_image(int L, SSTACK *stack) {
 		printf("%03d,", stack->stk[a]);
 	}
 	printf("\n");
+}
+
+void print_moments(long double moments[BINS][MAX_MOMENTS+1]) {
+	int t, m; 
+	for(t = 0; t < BINS; t++){
+		printf("%.3Lf",write_times[t]); 
+		for(m = 0; m <= MAX_MOMENTS; m++){
+			printf("\t %.1Lf", moments[t][m]);
+		} 
+		printf("\n");
+	} 
 }
 
 int count_tracers(int L) {
@@ -145,6 +152,31 @@ int CHOOSE_RANDOM_INIT(){
 	int r; 
 	_RANDOM_INT(r, stack.top); 
 	return r; 
+}
+
+void init_moments(long double moments[BINS][MAX_MOMENTS+1]) {
+	int t, m; 
+	for (m = 0; m <= MAX_MOMENTS; m++) {
+		for(t = 0; t < BINS; t++){
+			moments[t][m]=0;
+		}
+	}
+}
+
+void add_moments(int x, int t, long double moments[BINS][MAX_MOMENTS+1]) {
+	int i; 
+	for(i = 0; i <= MAX_MOMENTS; i++){
+		moments[t][i] += (long double) pow(x,i);
+	}
+}
+
+void pad_moments(int x, int t, long double moments[BINS][MAX_MOMENTS+1]) {
+	int i, j; 
+	for (j = t; j < BINS; j++) {
+		for (i = 0; i <=MAX_MOMENTS; i++){
+			moments[j][i] += (long double) pow(x, i);
+		}
+	}
 }
 
 int main(int argc, char *argv[])
@@ -191,6 +223,9 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 
 	printf("# Running for L = %i\n", L);
 	int _n = 0, chunk = 0;
+
+	init_moments(tracer_moments); 
+	init_moments(active_moments); 
 	//#warning "Debug only."
 	//N=55;
 	for (_n = 0; _n < N; _n++) {
@@ -210,18 +245,20 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 			time += (EXP_WAIT(PARTICLE_COUNT));
 
 			while ((write_times[write_time_index] < time) && (write_time_index <= BINS - 1)) {
-				if (PARTICLE_COUNT >= 1) {
-					printf("time: %.3Lf \n", write_times[write_time_index]); // record binned times instead
-					if (write_image == 1) { 
-						spit_out_image(L, &stack); // Only print when there are more than one particles (to save half of the printing)
-					}
-					if (write_msd == 1) {
-						active_tip_msd(&stack); 
-					}
-					if (write_total == 1) {
-						printf("total active: %.03d \n", stack.top);
-						printf("total tracer: %.03d \n", count_tracers(L)); 
-					}
+				printf("time: %.3Lf \n", write_times[write_time_index]); // record binned times instead
+				if (write_image == 1) { 
+					spit_out_image(L, &stack); // Only print when there are more than one particles (to save half of the printing)
+				}
+				if (write_msd == 1) {
+					active_tip_msd(&stack); 
+				}
+				if (write_total == 1) {
+					printf("total active: %.03d \n", stack.top);
+					printf("total tracer: %.03d \n", count_tracers(L)); 
+				}
+				if (write_moments == 1) {
+					add_moments(stack.top, write_time_index, active_moments); 
+					add_moments(count_tracers(L), write_time_index, tracer_moments); 
 				}
 				write_time_index++; 
 			}
@@ -321,9 +358,21 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 		if (write_final == 1 ) {
 			spit_out_image(L, &stack); // print out the final state 
 		}
+		if (write_moments == 1) {
+			pad_moments(count_tracers(L), write_time_index, tracer_moments);
+		}
+	}
+
+	printf("#Writing moments: \n ");
+	if (write_moments == 1){
+		printf("active moments: \n");
+		print_moments(active_moments); 
+		printf("tracer moments: \n");
+		print_moments(tracer_moments); 
 	}
 	printf("# Info: count_full_resets=%i and count_cache_resets=%i\n", count_full_resets, count_cache_resets);
 	printf("#okely dokely!");//look for this line int stats out
+
 }
 
 
