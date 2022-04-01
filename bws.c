@@ -69,7 +69,7 @@ void print_write_times(void);
 int __sample_n__ = -1;//541; //-1;
 int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 0, write_edge = 0, write_hull = 0, write_total = 1, write_final = 1; 
 int write_avalanches = 0; 
-int branch_method = 0; 
+int branch_method = 1; 
 
 char *lattice;
 SSTACK stack;
@@ -147,7 +147,6 @@ int CHOOSE_RANDOM_INIT(){
 	return r; 
 }
 
-
 int main(int argc, char *argv[])
 {
 	// Set buffer to zero so that process has to write into stdout immediately
@@ -196,10 +195,9 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 	//N=55;
 	for (_n = 0; _n < N; _n++) {
 		printf("# Starting the %d th realisation \n", _n); 
-		double rd = 0.0, ro=0.0, rb=0.0, ra=0.0; 
+		double rd = 0.0, ro=0.0, ra=0.0; 
 		long double time = 0.0, last_time = 0.0;
 		int write_time_index = 0, pos = 0, next = 0; 
-		tuple branched_pos; 
 		int r=0, past_pos=0;  
 		init_lattice(bcs, L, D);
 		stack.top = 0; past_pos_stack.top = 0;
@@ -239,36 +237,56 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 
 			rd = RANDOM_DOUBLE;//to choose sub-process...
 
-			if (rd <= h) {//branch locally (and stay)
-
-				if (branch_method == 0) { // local branch 
-					ADD(pos);
-					ADD(pos);
-					PUSH(past_pos, &past_pos_stack);
-					PUSH(past_pos, &past_pos_stack);
-					if (write_edge == 1) {
-						printf("edge: %03d,%03d\n", pos, pos);
-						printf("edge: %03d,%03d\n", pos, pos);
-					}
+			// can change the code to look better if we delete local branching 
+			if (rd <= h) { 
+				ADD(pos);
+				ADD(pos);
+				PUSH(past_pos, &past_pos_stack);
+				PUSH(past_pos, &past_pos_stack);
+				if (write_edge == 1) {
+					printf("edge: %03d,%03d\n", pos, pos);
+					printf("edge: %03d,%03d\n", pos, pos);
 				}
-				else { 
-					rb = RANDOM_DOUBLE; 
-					branched_pos = branch_2d(pos, past_pos, p, q, rb);
-					REMOVE(pos); 
 
-					if ((branched_pos.a != -1) && (TRACE_FLAG != (lattice[branched_pos.a] & TRACE_FLAG))) {
-						ADD(branched_pos.a);
-						PUSH(pos, &past_pos_stack);	
-						if (write_edge == 1) { 
-							printf("edge:%03d,%03d\n", pos, branched_pos.a);
+				if (branch_method == 1) { // if nonlocal branch, immediately force a diffusion step
+					POP(&stack); 
+					POP(&stack); // pop twice (the latest particles on site as a result of branching)
+					POP(&past_pos_stack); 
+					POP(&past_pos_stack); 
+
+					ro = RANDOM_DOUBLE; 
+					ra = RANDOM_DOUBLE; 
+					next = persist_diffuse2d(pos, past_pos, p, q, ro);
+
+					if (next == -1) {//-1 illegal - dead for open boundary - not put back on stack, reset flag on lattice
+						REMOVE(pos);
+					}
+					else if ((TRACE_FLAG == (lattice[next] & TRACE_FLAG)) && (ra <= a) ) { // if the site is already occupied there is a chance of annihilation
+						REMOVE(pos); 
+					}
+					else {
+						MOVE(pos, next);
+						PUSH(pos, &past_pos_stack); // track the current position as past position
+						if (write_edge == 1) {
+							printf("edge:%03d,%03d\n", pos, next);
 						}
 					}
 
-					if ((branched_pos.b != -1) && (TRACE_FLAG != (lattice[branched_pos.b] & TRACE_FLAG))) {
-						ADD(branched_pos.b);
-						PUSH(pos, &past_pos_stack);
+					ro = RANDOM_DOUBLE; 
+					ra = RANDOM_DOUBLE; 
+					next = persist_diffuse2d(pos, past_pos, p, q, ro);
+
+					if (next == -1) {//-1 illegal - dead for open boundary - not put back on stack, reset flag on lattice
+						REMOVE(pos);
+					}
+					else if ((TRACE_FLAG == (lattice[next] & TRACE_FLAG)) && (ra <= a) ) { // if the site is already occupied there is a chance of annihilation
+						REMOVE(pos); 
+					}
+					else {
+						MOVE(pos, next);
+						PUSH(pos, &past_pos_stack); // track the current position as past position
 						if (write_edge == 1) {
-							printf("edge:%03d,%03d\n", pos, branched_pos.b);
+							printf("edge:%03d,%03d\n", pos, next);
 						}
 					}
 				}
