@@ -62,7 +62,7 @@
 void print_write_times(void);
 /*globals*/
 int __sample_n__ = -1;//541; //-1;
-int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 0, write_edge = 0, write_hull = 0, write_total = 1, write_final = 1; 
+int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 0, write_edge = 0, write_hull = 0, write_total = 1, write_final = 0, write_coarse_grain_moments = 1; 
 int write_avalanches = 0, write_moments = 1; 
 int branch_method = 1; 
 
@@ -101,6 +101,38 @@ void spit_out_image(int L, SSTACK *stack) {
 	}
 	printf("\n");
 }
+
+void print_density_moments(int L) {
+	int a, k, x, y, bx, by, l; 
+	double count, den; 
+	double m1, m2; 
+	printf("coarse_grain_tracer: \n");
+	for (k=1; k<log2(L)-1; k++){
+		l = (int) pow(2, k) ;
+		m1 = 0; 
+		m2 = 0; 
+		for (bx=0; bx<L/l; bx++){
+			for (by=0; by<L/l; by++){
+				count = 0; 
+				for (x=bx*l; x<(bx+1)*l; x++){
+					for (y=by*l; y<(by+1)*l; y++){
+						a = x*L+y; 
+						if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {	
+							count += 1;
+						}
+					}
+				}
+				den = count/(l*l);
+				m1 += den; 
+				m2 += den*den; 
+			}
+		}
+		m1 /= (L/l)*(L/l);
+		m2 /= (L/l)*(L/l);
+		printf("%03d, %.6f, %.6f \n", l, m1, m2);
+	}
+}
+
 
 void print_moments(long double moments[BINS][MAX_MOMENTS+1]) {
 	int t, m; 
@@ -358,6 +390,9 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 		if (write_final == 1 ) {
 			spit_out_image(L, &stack); // print out the final state 
 		}
+		if (write_coarse_grain_moments == 1){
+			print_density_moments(L);
+		}
 		if (write_moments == 1) {
 			pad_moments(count_tracers(L), write_time_index, tracer_moments);
 		}
@@ -582,7 +617,7 @@ int parse_args(int *bcs, int *D, int *L, int *C, int *Ln, int *N, int *seed, int
 		*max_l = *Ln;
 	}
 	if (*L > 0)MAX_L = *L;
-	else MAX_L = pow(2, *max_l) - 1;
+	else MAX_L = pow(2, *max_l) + 1;
 
 	return TRUE;
 }
