@@ -62,9 +62,9 @@
 void print_write_times(void);
 /*globals*/
 int __sample_n__ = -1;//541; //-1;
-int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 0, write_edge = 0, write_hull = 0, write_total = 1, write_final = 0, write_coarse_grain_moments = 1; 
-int write_avalanches = 0, write_moments = 1; 
-int branch_method = 1; 
+int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 1, write_edge = 0, write_hull = 0, write_total = 1, write_final = 0, write_coarse_grain_moments = 1; 
+int write_avalanches = 0, write_moments = 1; write_edge_reach = 1; 
+int branch_method = 2; 
 
 char *lattice;
 SSTACK stack;
@@ -165,6 +165,46 @@ void active_tip_msd(SSTACK *stack) {
 	printf("msd: %.3f \n", sd/stack->top); 
 }
 
+void print_edge_reach(int L) {
+	int a = 0; 
+	int count = 0; 
+
+	// do the four edges 
+	for (a=0; a<L;a++){
+		if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {
+			count += 1;
+		}
+	}
+	printf("x=0 edge: %03d", count);
+
+	count = 0; 
+	for (a=(L-1)*L; a<L*L;a++){
+		if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {
+			count += 1;
+		}
+	}
+	printf("x=L edge: %03d", count); 
+
+	count = 0; 
+	for (a=0; a<L*(L-1);a+=L){
+		if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {
+			count += 1;
+		}
+	}
+	printf("y=0 edge: %03d", count); 
+
+	count = 0; 
+	for (a=L-1; a<L*L;a+=L){
+		if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {
+			count += 1;
+		}
+	}
+	printf("y=L edge: %03d", count); 
+
+}
+
+
+
 int POP(SSTACK *stack) {
 	return stack->stk[--stack->top];
 }
@@ -264,6 +304,7 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 		printf("# Starting the %d th realisation \n", _n); 
 		double rd = 0.0, ro=0.0, ra=0.0; 
 		long double time = 0.0, last_time = 0.0;
+		tuple return_vals;  
 		int write_time_index = 0, pos = 0, next = 0; 
 		int r=0, past_pos=0;  
 		init_lattice(bcs, L, D);
@@ -308,16 +349,28 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 
 			// can change the code to look better if we delete local branching 
 			if (rd <= h) { 
-				ADD(pos);
-				ADD(pos);
-				PUSH(past_pos, &past_pos_stack);
-				PUSH(past_pos, &past_pos_stack);
-				if (write_edge == 1) {
-					printf("edge: %03d,%03d\n", pos, pos);
-					printf("edge: %03d,%03d\n", pos, pos);
-				}
+
+				if (branch_method == 0 ) { 
+					ADD(pos);
+					ADD(pos);
+					PUSH(past_pos, &past_pos_stack);
+					PUSH(past_pos, &past_pos_stack);
+					if (write_edge == 1) {
+						printf("edge: %03d,%03d\n", pos, pos);
+						printf("edge: %03d,%03d\n", pos, pos);
+					}
+				} 
 
 				if (branch_method == 1) { // if nonlocal branch, immediately force a diffusion step
+					ADD(pos);
+					ADD(pos);
+					PUSH(past_pos, &past_pos_stack);
+					PUSH(past_pos, &past_pos_stack);
+					if (write_edge == 1) {
+						printf("edge: %03d,%03d\n", pos, pos);
+						printf("edge: %03d,%03d\n", pos, pos);
+					}
+
 					POP(&stack); 
 					POP(&stack); // pop twice (the latest particles on site as a result of branching)
 					POP(&past_pos_stack); 
@@ -359,6 +412,21 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 						}
 					}
 				}
+
+				if (branch_method == 2) {
+					r = RANDOM_DOUBLE; 
+					return_vals = branch_2d(pos, past_pos, p, q, r); 
+					REMOVE(pos); 
+
+					if (return_vals.a != -1) {
+						ADD(return_vals.a);
+						PUSH(pos, &past_pos_stack); 
+					}
+					if (return_vals.b != -1) {
+						ADD(return_vals.b); 
+						PUSH(pos, &past_pos_stack); 
+					}
+				}
 			}
 
 			else { //hop
@@ -395,6 +463,10 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 		}
 		if (write_moments == 1) {
 			pad_moments(count_tracers(L), write_time_index, tracer_moments);
+		}
+
+		if (write_edge_reach == 1) {
+			print_edge_reach(L); 
 		}
 	}
 
