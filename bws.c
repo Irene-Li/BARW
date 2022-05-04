@@ -62,8 +62,8 @@
 void print_write_times(void);
 /*globals*/
 int __sample_n__ = -1;//541; //-1;
-int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 1, write_edge = 0, write_hull = 0, write_total = 1, write_final = 0, write_coarse_grain_moments = 1; 
-int write_avalanches = 0, write_moments = 1; write_edge_reach = 1; 
+int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 1, write_edge = 0, write_hull = 0, write_total = 1, write_final = 1, write_coarse_grain_moments = 1; 
+int write_avalanches = 0, write_moments = 1, write_edge_reach = 1; 
 int branch_method = 2; 
 
 char *lattice;
@@ -168,6 +168,7 @@ void active_tip_msd(SSTACK *stack) {
 void print_edge_reach(int L) {
 	int a = 0; 
 	int count = 0; 
+	printf("edge reach: \n");
 
 	// do the four edges 
 	for (a=0; a<L;a++){
@@ -175,7 +176,7 @@ void print_edge_reach(int L) {
 			count += 1;
 		}
 	}
-	printf("x=0 edge: %03d", count);
+	printf("x=0: %03d \n", count);
 
 	count = 0; 
 	for (a=(L-1)*L; a<L*L;a++){
@@ -183,7 +184,7 @@ void print_edge_reach(int L) {
 			count += 1;
 		}
 	}
-	printf("x=L edge: %03d", count); 
+	printf("x=L: %03d \n", count); 
 
 	count = 0; 
 	for (a=0; a<L*(L-1);a+=L){
@@ -191,7 +192,7 @@ void print_edge_reach(int L) {
 			count += 1;
 		}
 	}
-	printf("y=0 edge: %03d", count); 
+	printf("y=0: %03d \n", count); 
 
 	count = 0; 
 	for (a=L-1; a<L*L;a+=L){
@@ -199,7 +200,7 @@ void print_edge_reach(int L) {
 			count += 1;
 		}
 	}
-	printf("y=L edge: %03d", count); 
+	printf("y=L: %03d \n", count); 
 
 }
 
@@ -364,8 +365,6 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 				if (branch_method == 1) { // if nonlocal branch, immediately force a diffusion step
 					ADD(pos);
 					ADD(pos);
-					PUSH(past_pos, &past_pos_stack);
-					PUSH(past_pos, &past_pos_stack);
 					if (write_edge == 1) {
 						printf("edge: %03d,%03d\n", pos, pos);
 						printf("edge: %03d,%03d\n", pos, pos);
@@ -373,8 +372,6 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 
 					POP(&stack); 
 					POP(&stack); // pop twice (the latest particles on site as a result of branching)
-					POP(&past_pos_stack); 
-					POP(&past_pos_stack); 
 
 					ro = RANDOM_DOUBLE; 
 					ra = RANDOM_DOUBLE; 
@@ -418,16 +415,31 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 					return_vals = branch_2d(pos, past_pos, p, q, r); 
 					REMOVE(pos); 
 
-					if (return_vals.a != -1) {
+
+					ra = RANDOM_DOUBLE; 
+					// if not at boundary or (not occupied or does not annihilate)
+					if ((return_vals.a != -1) && ((TRACE_FLAG != (lattice[return_vals.a] & TRACE_FLAG)) || (ra > a))) { 
 						ADD(return_vals.a);
 						PUSH(pos, &past_pos_stack); 
+
+						if (write_edge == 1) {
+							printf("edge:%03d,%03d\n", pos, return_vals.a);
+						} 
+
 					}
-					if (return_vals.b != -1) {
+
+					ra = RANDOM_DOUBLE; 
+					if ((return_vals.b != -1) && ((TRACE_FLAG != (lattice[return_vals.b] & TRACE_FLAG)) || (ra > a))) {
 						ADD(return_vals.b); 
 						PUSH(pos, &past_pos_stack); 
+
+						if (write_edge == 1) {
+							printf("edge:%03d,%03d\n", pos, return_vals.b);
+						}
 					}
-				}
+				}	
 			}
+
 
 			else { //hop
 				ro = RANDOM_DOUBLE; 
