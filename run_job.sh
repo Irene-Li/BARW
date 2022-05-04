@@ -6,9 +6,9 @@ OUTPUTDIR="BARW/"
 SEED=1000 # Starting seed
 L=256  # system size 2**n+1
 N=1000 # number of realisations
-hmin=0.51 # branching to hopping rate ratio
-hmax=0.55 
-hstep=0.01 
+hmin=0.3 # branching to hopping rate ratio
+hmax=0.7 
+hstep=0.1 
 
 p=0.34 # prob. of hopping in the same direction as the previous hop 
 q=0.33 # prob. of hopping to one of the two orthogonal directions.
