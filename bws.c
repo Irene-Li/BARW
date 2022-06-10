@@ -62,7 +62,7 @@
 void print_write_times(void);
 /*globals*/
 int __sample_n__ = -1;//541; //-1;
-int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 1, write_edge = 0, write_hull = 0, write_total = 1, write_final = 1, write_coarse_grain_moments = 1; 
+int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 1, write_edge = 0, write_hull = 0, write_total = 0, write_final = 0, write_coarse_grain_moments = 1; 
 int write_avalanches = 0, write_moments = 1, write_edge_reach = 1; 
 int branch_method = 2; 
 
@@ -104,13 +104,15 @@ void spit_out_image(int L, SSTACK *stack) {
 
 void print_density_moments(int L) {
 	int a, k, x, y, bx, by, l; 
-	double count, den; 
-	double m1, m2; 
+	double count; 
+	double m1, m2, m3, m4; 
 	printf("coarse_grain_tracer: \n");
 	for (k=1; k<log2(L)-1; k++){
 		l = (int) pow(2, k) ;
 		m1 = 0; 
 		m2 = 0; 
+		m3 = 0; 
+		m4 = 0; 
 		for (bx=0; bx<L/l; bx++){
 			for (by=0; by<L/l; by++){
 				count = 0; 
@@ -122,14 +124,17 @@ void print_density_moments(int L) {
 						}
 					}
 				}
-				den = count/(l*l);
-				m1 += den; 
-				m2 += den*den; 
+				m1 += count; 
+				m2 += count*count; 
+				m3 += count*count*count; 
+				m4 += count*count*count*count; 
 			}
 		}
 		m1 /= (L/l)*(L/l);
 		m2 /= (L/l)*(L/l);
-		printf("%03d, %.6f, %.6f \n", l, m1, m2);
+		m3 /= (L/l)*(L/l); 
+		m4 /= (L/l)*(L/l); 
+		printf("%03d, %.6f, %.6f, %.6f, %.6f \n", l, m1, m2, m3, m4);
 	}
 }
 
@@ -168,39 +173,44 @@ void active_tip_msd(SSTACK *stack) {
 void print_edge_reach(int L) {
 	int a = 0; 
 	int count = 0; 
-	printf("edge reach: \n");
+	printf("edge reach: ");
 
 	// do the four edges 
+
+	 // x = 0 
 	for (a=0; a<L;a++){
 		if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {
 			count += 1;
 		}
 	}
-	printf("x=0: %03d \n", count);
+	printf("%03d,", count);
 
+	// x = L 
 	count = 0; 
 	for (a=(L-1)*L; a<L*L;a++){
 		if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {
 			count += 1;
 		}
 	}
-	printf("x=L: %03d \n", count); 
+	printf("%03d,", count); 
 
+	// y = 0 
 	count = 0; 
 	for (a=0; a<L*(L-1);a+=L){
 		if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {
 			count += 1;
 		}
 	}
-	printf("y=0: %03d \n", count); 
+	printf("%03d,", count); 
 
+	// y = L 
 	count = 0; 
 	for (a=L-1; a<L*L;a+=L){
 		if (TRACE_FLAG == (lattice[a] & TRACE_FLAG)) {
 			count += 1;
 		}
 	}
-	printf("y=L: %03d \n", count); 
+	printf("%03d \n", count); 
 
 }
 
