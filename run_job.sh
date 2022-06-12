@@ -17,9 +17,9 @@ q=0.33 # prob. of hopping to one of the two orthogonal directions.
 # Below this line, it's not necessary to change things
 for i in $(seq ${hmin} ${hstep} ${hmax})
 do
-    #define joboutput
+    # define joboutput
     JOBOUTPUT="${OUTPUTDIR}data_L${L}_N${N}_p${p}_q${q}_h${i}.dat"
-    #mkdir -p "$(dirname ${JOBOUTPUT})"
+    # mkdir -p "$(dirname ${JOBOUTPUT})"
     ./bws -L $L -N $N -h $i -p $p -q $q --seed ${SEED} > ${JOBOUTPUT}
     SEED=$((SEED + 10))
 done
