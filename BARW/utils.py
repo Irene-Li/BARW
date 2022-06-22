@@ -47,7 +47,7 @@ def extract_lite(realisation, N):
             edge_reach = np.fromstring(line[11:-1], sep=',')
         elif line.startswith('coarse_grain_tracer'):
             f = lambda x: np.fromstring(x, sep=',')
-            coarse_grain_moments = np.vstack(map(f, realisation[i+1:i+N+1]))
+            coarse_grain_moments = np.vstack(list(map(f, realisation[i+1:i+N+1])))
     return time, msd, edge_reach, coarse_grain_moments
 
 def extract_moments(moments): 
