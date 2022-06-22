@@ -347,8 +347,10 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 				write_time_index++; 
 			}
 
-			if (write_times[BINS - 1] < time) { 
-				printf("##Recorded excessive time"); 
+			if (write_times[BINS - 1] < time) { // debug 
+				printf("## Recorded excessive time \n");
+				printf("## waiting time:  %.3Lf \n", time-last_time); 
+				printf("## stack.top: %.03d \n", stack.top); 
 				break; 
 			}
 
