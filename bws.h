@@ -2,7 +2,7 @@
 #define MAXSIZE 5000000
 
 //default resolution for histogram intervals
-#define BINS 1000
+#define BINS 2000
 
 #define LATTICE_BASE 3
 //dummy change 2
@@ -26,7 +26,7 @@
 #define TIME_WRITE_COUNTS 10 // e.g from 0..10 write 10 times, from 100..1000 write 10 times etc.
 #define TIME_WRITE_SCALES  9
 //#define MAX_T TIME_WRITE_COUNTS * TIME_WRITE_SCALES 
-#define MAX_T 10000000000.
+#define MAX_T 20000000000.
 #define MIN_T  0.1
 #define MAX_MOMENTS 6
 //#define CHUNKS_SIZE 100000
