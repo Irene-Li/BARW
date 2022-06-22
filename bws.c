@@ -42,7 +42,7 @@
 //todo: above we should be passng size
 
 #define _RANDOM_INT(r, n) unsigned x= genrand_int32(); while (x >= RNG_MT_MAX - (RNG_MT_MAX % n)) {x = genrand_int32();} x %= n; r = (int)x;
-#define RANDOM_DOUBLE  genrand_real1()
+#define RANDOM_DOUBLE  genrand_real2()
 #define RANDOM_ORIENTATION (genrand_int32() % (2*D))
 #define EXP_WAIT(n) (1.0/(double)n) * (-log(1-RANDOM_DOUBLE))
 
@@ -62,7 +62,7 @@
 void print_write_times(void);
 /*globals*/
 int __sample_n__ = -1;//541; //-1;
-int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 1, write_edge = 0, write_hull = 0, write_total = 0, write_final = 0, write_coarse_grain_moments = 1; 
+int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 1, write_edge = 0, write_hull = 0, write_total = 0, write_final = 1, write_coarse_grain_moments = 1; 
 int write_avalanches = 0, write_moments = 1, write_edge_reach = 1; 
 int branch_method = 2; 
 
