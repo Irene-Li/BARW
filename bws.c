@@ -62,7 +62,7 @@
 void print_write_times(void);
 /*globals*/
 int __sample_n__ = -1;//541; //-1;
-int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 1, write_edge = 0, write_hull = 0, write_total = 0, write_final = 1, write_coarse_grain_moments = 1; 
+int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 1, write_edge = 0, write_hull = 0, write_total = 0, write_final = 0, write_coarse_grain_moments = 1; 
 int write_avalanches = 0, write_moments = 1, write_edge_reach = 1; 
 int branch_method = 2; 
 
