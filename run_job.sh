@@ -4,11 +4,11 @@ OUTPUTDIR="BARW/"
 # Change parameters below and then run with chmod +x run_job.sh && ./run_job.sh
 # sample: ./bws -L 257 -N 1000 -h 0.2 -p 0.25 -q 0.25 > BARW/data_h_0.4_p_0.25_q_0.25.txt 
 SEED=1300 # Starting seed
-L=513  # system size 2**n+1
-N=1000 # number of realisations
-hmin=0.3 # branching to hopping rate ratio
-hmax=0.8 
-hstep=0.05
+L=2049  # system size 2**n+1
+N=6000 # number of realisations
+hmin=0.308 # branching to hopping rate ratio
+hmax=0.308 
+hstep=0.001
 
 p=0.34 # prob. of hopping in the same direction as the previous hop 
 q=0.33 # prob. of hopping to one of the two orthogonal directions.

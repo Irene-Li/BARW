@@ -5,11 +5,11 @@ my_analysis.ipynb
 *.out
 *.dat
 *.data
+*.zip
 *.csv
 *.txt
 *.db
 *.opendb
-*.zip
 *.rar
 *.gzip
 *.tar
@@ -21,12 +21,6 @@ bin
 *.suo
 **/bws_run*
 *.mp4
-bws
 *.o
-*.mp4
 .DS_Store
-*.mp4
-bws
-*.mp4
-bws
 *.pyc
