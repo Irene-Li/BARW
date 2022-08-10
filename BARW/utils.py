@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 def read_file(file, verbose=False): 
@@ -79,9 +80,14 @@ def extract_evolution(realisation, L):
     time = [] 
     passive_flag = False 
     active_flag = False
+    
+    tracer_snapshot = np.zeros((L, L)) 
+    active_snapshot = np.zeros((L, L)) 
     for line in realisation:  
         if line.startswith('time'):
             time.append(float(line[5:-1]))
+            tracer_snapshot = np.zeros((L, L)) # clear the snapshot for the next time slice 
+            active_snapshot = np.zeros((L, L)) 
         elif line.startswith('total active'):
             total_active.append(float(line[13:-1]))
         elif line.startswith('total tracer'):
@@ -98,9 +104,6 @@ def extract_evolution(realisation, L):
             msds.append(float(line[4:-1]))
         elif line.startswith('edge'): 
             edges.append(np.fromstring(line[5:-1], sep=','))
-        else: 
-            tracer_snapshot = np.zeros((L, L)) # clear the snapshot for the next time slice 
-            active_snapshot = np.zeros((L, L)) 
             
         if passive_flag and active_flag: 
             tracer_snapshot[passive_indices] = 1 # set occupied sites to -1 
@@ -112,9 +115,9 @@ def extract_evolution(realisation, L):
             passive_flag = False 
             active_flag = False 
             
-    return np.array(edges), np.array(msds), np.array(counts), np.array(tracers), np.array(active_particles)
+    return np.array(times), np.array(edges), np.array(msds), np.array(tracers), np.array(active_particles)
 
-def make_movies(evolution, label):
+def make_movies(evolution, label, i):
     fig = plt.figure(figsize=(20, 20))
     ims = []
     plt.axis('off')
@@ -128,7 +131,6 @@ def make_movies(evolution, label):
     mywriter = am.FFMpegWriter()
     ani.save("{}_movie_{}.mp4".format(label, i), writer=mywriter)
     plt.close()  
-    
     
 def pad(nested_lists): 
     max_length = max(map(len, nested_lists))
