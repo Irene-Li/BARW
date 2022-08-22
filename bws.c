@@ -324,7 +324,14 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 
 		int cen = get_center(L, D);
 		ADD(cen);
+		ADD(cen);
+		ADD(cen); 
+		ADD(cen);
 		PUSH(cen-1, &past_pos_stack); // Starting with a right moving particle
+		PUSH(cen+1, &past_pos_stack);
+		PUSH(cen-L, &past_pos_stack);
+		PUSH(cen+L, &past_pos_stack);
+		
 		do {
 			time += (EXP_WAIT(PARTICLE_COUNT));
 

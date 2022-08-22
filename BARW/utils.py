@@ -115,7 +115,7 @@ def extract_evolution(realisation, L):
             passive_flag = False 
             active_flag = False 
             
-    return np.array(times), np.array(edges), np.array(msds), np.array(tracers), np.array(active_particles)
+    return np.array(time), np.array(edges), np.array(msds), np.array(tracers), np.array(active_particles)
 
 def make_movies(evolution, label, i):
     fig = plt.figure(figsize=(20, 20))
