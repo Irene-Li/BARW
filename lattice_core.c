@@ -294,18 +294,20 @@ tuple branch_2d(int pos, int past_pos, double p, double q, double r) {
 	tuple step_sizes; 
 	int past_step = pos - past_pos; 
 	int past_step_size = (int) abs(past_step); 
-	int sideway_step = get_sideway_step(pos, past_pos);
+	int sideway_step = abs(get_sideway_step(pos, past_pos));
 	if (r < 1./3.) {
 		// branch forward and one side direction 
+		// printf("first:  %.3f \n", r);
 		return_vals.a = pos + past_step;  
-		return_vals.b = pos + sideway_step;
+		return_vals.b = pos - sideway_step;
 		step_sizes.a = past_step_size; 
 		step_sizes.b = sideway_step; 
 	}
 	else if (r < 2./3.) {
 		// branch forward and the other side direction 
+		// printf("second:  %.3f \n", r);
 		return_vals.a = pos + past_step; 
-		return_vals.b = pos - sideway_step;
+		return_vals.b = pos + sideway_step;
 		step_sizes.a = past_step_size;
 		step_sizes.b = sideway_step; 
 	}

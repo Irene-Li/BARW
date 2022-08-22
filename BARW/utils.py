@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import animation as am
 
 
 def read_file(file, verbose=False): 

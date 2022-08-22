@@ -313,25 +313,25 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 	//N=55;
 	for (_n = 0; _n < N; _n++) {
 		printf("# Starting the %d th realisation \n", _n); 
-		double rd = 0.0, ro=0.0, ra=0.0; 
+		double rd = 0.0, ro=0.0, ra=0.0, r=0.0; 
 		long double time = 0.0, last_time = 0.0;
 		tuple return_vals;  
 		int write_time_index = 0, pos = 0, next = 0; 
-		int r=0, past_pos=0;  
+		int past_pos=0;  
 		init_lattice(bcs, L, D);
 		stack.top = 0; past_pos_stack.top = 0;
 		__trace = 0; __immobileTrace = 0, __maxParticles = 0;
 
 		int cen = get_center(L, D);
 		ADD(cen);
-		ADD(cen);
-		ADD(cen); 
-		ADD(cen);
+		// ADD(cen);
+		// ADD(cen); 
+		// ADD(cen);
 		PUSH(cen-1, &past_pos_stack); // Starting with a right moving particle
-		PUSH(cen+1, &past_pos_stack);
-		PUSH(cen-L, &past_pos_stack);
-		PUSH(cen+L, &past_pos_stack);
-		
+		// PUSH(cen+1, &past_pos_stack);
+		// PUSH(cen-L, &past_pos_stack);
+		// PUSH(cen+L, &past_pos_stack);
+
 		do {
 			time += (EXP_WAIT(PARTICLE_COUNT));
 
