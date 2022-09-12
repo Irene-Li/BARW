@@ -9,7 +9,7 @@ This is adapted from the code used in [1].
 ### Running the code 
 To run for a specific set of parameters, type:
 
-    ./bws -L 513 -N 10 -h 0.308 -p 0.34 -q 0.33 > BARW/test.dat
+    ./bws -L 257 -N 10 -h 0.5 -p 0.34 -q 0.33 -a 0.75 > BARW/test.dat
 
 where L is the length of the simulation box, N is the number of realisations and h is the ratio between the branching rate and diffusion. You can replace `data_h_0.5.txt` with any filename you'd like. 
 

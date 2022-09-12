@@ -39,6 +39,7 @@ def extract_lite(realisation, N):
     edge_reach = [] 
     msd = [] 
     time = []  
+    coarse_grain_moments = [] 
 
     for (i, line) in enumerate(realisation):  
         if line.startswith('time'):

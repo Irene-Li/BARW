@@ -62,7 +62,7 @@
 void print_write_times(void);
 /*globals*/
 int __sample_n__ = -1;//541; //-1;
-int write_hist = 0, write_lattice = 0, write_image = 0, write_msd = 0, write_edge = 0, write_hull = 0, write_total = 0, write_final = 0, write_coarse_grain_moments = 0; 
+int write_hist = 0, output_time = 0, write_lattice = 0, write_image = 0, write_msd = 0, write_edge = 0, write_hull = 0, write_total = 0, write_final = 0, write_coarse_grain_moments = 0; 
 int write_avalanches = 0, write_moments = 1, write_edge_reach = 1; 
 int branch_method = 2; 
 
@@ -336,7 +336,9 @@ inline void run_for_realisations(int N, int L, int D, double h, double p, double
 			time += (EXP_WAIT(PARTICLE_COUNT));
 
 			while ((write_times[write_time_index] < time) && (write_time_index <= BINS - 1)) {
-				printf("time: %.3Lf \n", write_times[write_time_index]); // record binned times instead
+				if (output_time == 1) {
+					printf("time: %.3Lf \n", write_times[write_time_index]); // record binned times instead
+				}
 				if (write_image == 1) { 
 					spit_out_image(L, &stack); // Only print when there are more than one particles (to save half of the printing)
 				}
